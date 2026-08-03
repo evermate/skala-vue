@@ -1,0 +1,136 @@
+<script setup>
+import { computed } from 'vue'
+
+const props = defineProps({
+  temp: {
+    type: Number,
+    default: null,
+  },
+  min: {
+    type: Number,
+    default: -20,
+  },
+  max: {
+    type: Number,
+    default: 45,
+  },
+})
+
+function ratioOf(value) {
+  const clamped = Math.min(Math.max(value, props.min), props.max)
+  return ((clamped - props.min) / (props.max - props.min)) * 100
+}
+
+const ratio = computed(() => (props.temp == null ? 0 : ratioOf(props.temp)))
+
+const fillColor = computed(() => {
+  if (props.temp == null) return 'var(--border)'
+  return props.temp >= 25 ? 'var(--warm-text)' : 'var(--cool-text)'
+})
+
+const TICK_STEPS = 5
+const ticks = computed(() =>
+  Array.from({ length: TICK_STEPS + 1 }, (_, i) => {
+    const value = Math.round(props.min + ((props.max - props.min) * i) / TICK_STEPS)
+    return { value, ratio: ratioOf(value) }
+  }),
+)
+</script>
+
+<template>
+  <div class="thermometer">
+    <div class="thermometer__track">
+      <div class="thermometer__fill" :style="{ height: ratio + '%', background: fillColor }"></div>
+    </div>
+
+    <div
+      v-for="tick in ticks"
+      :key="tick.value"
+      class="thermometer__tick"
+      :style="{ bottom: tick.ratio + '%' }"
+    >
+      <span class="thermometer__tick-mark"></span>
+      <span class="thermometer__tick-label">{{ tick.value }}°</span>
+    </div>
+
+    <div v-if="temp != null" class="thermometer__pointer" :style="{ bottom: ratio + '%' }">
+      <span class="thermometer__pointer-label" :style="{ background: fillColor }">
+        {{ temp }}°
+      </span>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.thermometer {
+  position: relative;
+  width: 44px;
+  height: 100%;
+  min-height: 160px;
+  flex-shrink: 0;
+}
+
+.thermometer__track {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.thermometer__fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  transition:
+    height 0.6s ease,
+    background 0.6s ease;
+}
+
+.thermometer__tick {
+  position: absolute;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transform: translateY(50%);
+}
+
+.thermometer__tick-mark {
+  width: 4px;
+  height: 1px;
+  background: var(--border);
+}
+
+.thermometer__tick-label {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.thermometer__pointer {
+  position: absolute;
+  left: 14px;
+  z-index: 2;
+  transform: translateY(50%);
+  transition: bottom 0.6s ease;
+}
+
+.thermometer__pointer-label {
+  display: inline-block;
+  padding: 2px 5px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.6s ease;
+}
+</style>
