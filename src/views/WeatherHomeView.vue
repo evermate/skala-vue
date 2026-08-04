@@ -11,7 +11,6 @@ import WeatherEffect from '@/components/WeatherEffect.vue'
 import WeatherThermometer from '@/components/WeatherThermometer.vue'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
-import { WEATHER_LEGEND } from '@/utils/openWeatherCode'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 import { reverseGeocode } from '@/utils/fetchWeatherExtras'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
@@ -39,6 +38,8 @@ const currentLocationLoading = ref(false)
 const currentLocationError = ref('')
 const { unitSymbol: currentLocationUnitSymbol, displayTemp: currentLocationDisplayTemp } =
   useDisplayTemp(() => currentLocationCity.value?.temp)
+// WeatherCard의 더움/선선함 판정과 동일하게 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
+const currentLocationIsWarm = computed(() => (currentLocationCity.value?.temp ?? 0) >= 25)
 
 const activeCities = computed(() => (region.value === 'domestic' ? KOREA_CITIES : WORLD_CITIES))
 
@@ -219,18 +220,6 @@ onMounted(fetchWeatherList)
           icon="fa-solid fa-cloud-sun"
           :title="region === 'domestic' ? '국내 날씨 현황' : '해외 날씨 현황'"
         >
-          <template #title-extra>
-            <ul class="weather-dashboard__legend">
-              <li
-                v-for="entry in WEATHER_LEGEND"
-                :key="entry.status"
-                class="weather-dashboard__legend-item"
-              >
-                <i :class="entry.icon"></i> {{ entry.status }}
-              </li>
-            </ul>
-          </template>
-
           <p v-if="isLoading" class="weather-dashboard__empty">
             <i class="fa-solid fa-spinner fa-spin"></i> 날씨 정보를 불러오는 중입니다...
           </p>
@@ -307,7 +296,10 @@ onMounted(fetchWeatherList)
               </p>
               <p class="current-location__status">{{ currentLocationCity.status }}</p>
             </div>
-            <p class="current-location__temp">
+            <p
+              class="current-location__temp"
+              :class="currentLocationIsWarm ? 'is-warm' : 'is-cool'"
+            >
               {{ currentLocationDisplayTemp }}{{ currentLocationUnitSymbol }}
             </p>
           </div>
@@ -345,30 +337,6 @@ onMounted(fetchWeatherList)
   }
 }
 
-.weather-dashboard__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.weather-dashboard__legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.weather-dashboard__legend-item i {
-  color: var(--color-primary-darker);
-  font-size: 12px;
-}
-
 .weather-dashboard__map-row {
   display: flex;
   align-items: stretch;
@@ -381,12 +349,35 @@ onMounted(fetchWeatherList)
   min-width: 0;
 }
 
+/* 카드 5줄(2열이라 카드 10장) 높이만큼만 보이고 그 아래는 스크롤.
+   카드 한 장 높이(padding 16*2 + header 37) 69px * 5줄 + 줄 사이 gap 12px * 4 = 393px. */
 .weather-dashboard__list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
+  max-height: 393px;
   margin: 0;
-  padding: 0;
+  padding: 0 10px 0 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color-default) transparent;
+}
+
+.weather-dashboard__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.weather-dashboard__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.weather-dashboard__list::-webkit-scrollbar-thumb {
+  background: var(--border-color-default);
+  border-radius: 999px;
+}
+
+.weather-dashboard__list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-darker);
 }
 
 .weather-dashboard__empty {
@@ -460,8 +451,15 @@ onMounted(fetchWeatherList)
   margin: 0;
   font-size: 20px;
   font-weight: 800;
-  color: var(--color-text);
   flex-shrink: 0;
+}
+
+.current-location__temp.is-warm {
+  color: var(--color-warm);
+}
+
+.current-location__temp.is-cool {
+  color: var(--color-info);
 }
 
 .current-location__detail-btn {

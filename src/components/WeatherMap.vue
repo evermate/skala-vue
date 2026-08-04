@@ -148,6 +148,9 @@ function showCurrentLocationMarker(lat, lon, { fly = true } = {}) {
 
   currentLocationMarker?.remove()
   currentLocationMarker = L.marker([lat, lon], {
+    // 다른 도시 마커랑 겹칠 때 항상 뒤로 가도록 z-index를 낮게 고정한다.
+    // (Leaflet 기본값은 화면상 y좌표가 클수록 위로 오는데, 그러면 겹칠 때마다 순서가 뒤바뀐다.)
+    zIndexOffset: -1000,
     icon: L.divIcon({
       className: 'weather-mini-marker-wrap',
       html: '<div class="weather-current-location-marker"><i class="fa-solid fa-location-crosshairs"></i></div>',
