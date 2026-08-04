@@ -29,9 +29,10 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
     <div class="weather-card__header">
       <div class="weather-card__info">
         <i class="weather-card__icon" :class="city.icon"></i>
-        <p class="weather-card__name">
-          {{ city.name }} <span class="weather-card__status">({{ city.status }})</span>
-        </p>
+        <div class="weather-card__name-block">
+          <p class="weather-card__name">{{ city.name }}</p>
+          <p class="weather-card__status">{{ city.status }}</p>
+        </div>
       </div>
 
       <div class="weather-card__temp-block" :class="isWarm ? 'is-warm' : 'is-cool'">
@@ -80,7 +81,7 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 
 .weather-card__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
@@ -100,10 +101,18 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
   flex-shrink: 0;
 }
 
+.weather-card__name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  line-height: 1;
+}
+
 .weather-card__name {
   margin: 0;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 800;
   color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -111,8 +120,11 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 }
 
 .weather-card__status {
-  font-weight: 400;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .weather-card__temp-block {
@@ -124,7 +136,7 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 }
 
 .weather-card__temp-value {
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 800;
 }
 
