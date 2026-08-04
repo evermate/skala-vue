@@ -9,7 +9,7 @@ import WeatherEffect from '@/components/WeatherEffect.vue'
 import WeatherThermometer from '@/components/WeatherThermometer.vue'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
-import { WEATHER_LEGEND } from '@/utils/weatherCode'
+import { WEATHER_LEGEND } from '@/utils/openWeatherCode'
 import { fetchWeatherForCities } from '@/utils/fetchWeather'
 
 const router = useRouter()

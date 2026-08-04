@@ -76,7 +76,7 @@ onMounted(loadCityWeather)
         </div>
         <div class="weather-detail__row">
           <dt><i class="fa-solid fa-wind"></i> 풍속</dt>
-          <dd>{{ city.windSpeed }}km/h</dd>
+          <dd>{{ city.windSpeed }}m/s</dd>
         </div>
       </dl>
     </div>
