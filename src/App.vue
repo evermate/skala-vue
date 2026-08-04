@@ -23,8 +23,16 @@ import UnitToggler from './components/UnitToggler.vue'
 
 <style scoped>
 .app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
   border-bottom: 1px solid var(--border-color-default);
-  background: var(--color-card-background);
+  background: color-mix(in srgb, var(--color-card-background) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .app-nav__row {
@@ -32,9 +40,10 @@ import UnitToggler from './components/UnitToggler.vue'
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 12px 16px;
+  padding: 0 16px;
 }
 
 .app-nav__links {
