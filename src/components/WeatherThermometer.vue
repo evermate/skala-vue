@@ -24,8 +24,8 @@ function ratioOf(value) {
 const ratio = computed(() => (props.temp == null ? 0 : ratioOf(props.temp)))
 
 const fillColor = computed(() => {
-  if (props.temp == null) return 'var(--border)'
-  return props.temp >= 25 ? 'var(--warm-text)' : 'var(--cool-text)'
+  if (props.temp == null) return 'var(--border-color-default)'
+  return props.temp >= 25 ? 'var(--color-warm)' : 'var(--color-info)'
 })
 
 const TICK_STEPS = 5
@@ -76,8 +76,8 @@ const ticks = computed(() =>
   top: 0;
   bottom: 0;
   width: 8px;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
+  background: var(--color-primary-opacity-10);
+  border: 1px solid var(--border-color-default);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -104,13 +104,13 @@ const ticks = computed(() =>
 .thermometer__tick-mark {
   width: 4px;
   height: 1px;
-  background: var(--border);
+  background: var(--border-color-default);
 }
 
 .thermometer__tick-label {
   font-size: 8px;
   font-weight: 600;
-  color: var(--text-faint);
+  color: var(--color-text-light);
   white-space: nowrap;
 }
 
@@ -130,7 +130,7 @@ const ticks = computed(() =>
   font-size: 10px;
   font-weight: 800;
   white-space: nowrap;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
   transition: background 0.6s ease;
 }
 </style>

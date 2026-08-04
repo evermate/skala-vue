@@ -100,7 +100,7 @@ watch(
   width: 100%;
   min-height: 360px;
   height: 100%;
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-medium);
   overflow: hidden;
 }
 </style>

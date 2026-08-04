@@ -1,38 +1,44 @@
 :root {
-  /* accent */
-  --aurora-1: #4f7cff;
-  --aurora-2: #38bdf8;
+  /* 메인 컬러셋 */
+  --color-background: #fafafa;
+  --color-card-background: #ffffff;
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-text-light: #999999;
+  --color-primary: #ffd966;
+  --color-primary-light: #ffe599;
+  --color-primary-dark: #ffcc02;
+  --color-primary-darker: #f1c232;
 
-  /* surfaces */
-  --bg: #f1f5f9;
-  --surface: #ffffff;
-  --surface-muted: #f5f7fb;
-  --border: #e2e8f0;
-  --border-soft: #eef1f6;
+  /* 상태 컬러 */
+  --color-success: #4caf50;
+  --color-error: #f44336;
+  --color-warning: #ff9800;
+  --color-info: #2196f3;
 
-  /* text */
-  --text: #0f172a;
-  --text-dim: #64748b;
-  --text-faint: #94a3b8;
+  /* 투명도 변형 */
+  --color-primary-opacity-10: rgba(255, 217, 102, 0.1);
+  --color-primary-opacity-20: rgba(255, 217, 102, 0.2);
+  --color-primary-opacity-30: rgba(255, 217, 102, 0.3);
+  --color-primary-opacity-50: rgba(255, 217, 102, 0.5);
+  --color-primary-opacity-80: rgba(255, 217, 102, 0.8);
 
-  /* semantic */
-  --warm-bg: #ffedd5;
-  --warm-text: #c2410c;
-  --cool-bg: #dbeafe;
-  --cool-text: #1d4ed8;
-  --success-bg: #dcfce7;
-  --success-text: #166534;
-  --error-bg: #fee2e2;
-  --error-text: #b91c1c;
+  /* 상태 배경 틴트 */
+  --color-success-bg: rgba(76, 175, 80, 0.12);
+  --color-error-bg: rgba(244, 67, 54, 0.12);
 
-  /* shape */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* 온도계 · 날씨카드 "더움" 표시 전용 (cheese 팔레트가 아닌 기존 warm-text 색 유지) */
+  --color-warm: #c2410c;
 
-  /* elevation */
-  --shadow-sm: 0 2px 10px rgba(30, 41, 59, 0.05);
-  --shadow-md: 0 4px 12px rgba(79, 124, 255, 0.12);
+  /* 그림자 시스템 */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  /* 테두리 & radius 시스템 */
+  --border-color-default: #e0e0e0;
+  --border-radius-small: 4px;
+  --border-radius-medium: 8px;
+  --border-radius-large: 12px;
 
   /* type */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -40,7 +46,7 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--color-background);
   font-family: var(--font-sans);
-  color: var(--text);
+  color: var(--color-text);
 }
