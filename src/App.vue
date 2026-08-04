@@ -8,10 +8,12 @@ import UnitToggler from './components/UnitToggler.vue'
     <div class="app-nav__row">
       <nav class="app-nav__links">
         <RouterLink to="/" class="app-nav__link">
-          <i class="fa-solid fa-cloud-sun-rain"></i> 날씨 대시보드
+          <i class="fa-solid fa-cloud-sun-rain"></i>
+          <span class="app-nav__link-text">날씨 대시보드</span>
         </RouterLink>
         <RouterLink to="/about" class="app-nav__link">
-          <i class="fa-solid fa-circle-info"></i> 서비스 소개
+          <i class="fa-solid fa-circle-info"></i>
+          <span class="app-nav__link-text">서비스 소개</span>
         </RouterLink>
       </nav>
       <UnitToggler />
@@ -74,5 +76,24 @@ import UnitToggler from './components/UnitToggler.vue'
 .app-nav__link.router-link-active {
   background: var(--color-primary-darker);
   color: #ffffff;
+}
+
+@media (max-width: 520px) {
+  .app-nav__row {
+    padding: 0 10px;
+    gap: 6px;
+  }
+
+  .app-nav__links {
+    gap: 2px;
+  }
+
+  .app-nav__link {
+    padding: 8px 10px;
+  }
+
+  .app-nav__link-text {
+    display: none;
+  }
 }
 </style>

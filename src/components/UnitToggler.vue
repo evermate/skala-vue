@@ -45,4 +45,10 @@ const { toggleUnit } = configStore
 .unit-toggler__btn:hover {
   filter: brightness(1.08);
 }
+
+@media (max-width: 520px) {
+  .unit-toggler__label {
+    display: none;
+  }
+}
 </style>
