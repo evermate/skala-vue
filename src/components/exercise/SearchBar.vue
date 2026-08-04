@@ -59,13 +59,22 @@ function onSearchInput(e) {
         @input="onSearchInput"
         @keyup.enter="emit('search-enter')"
       />
+      <button
+        v-if="searchQuery"
+        type="button"
+        class="search-bar__clear-btn"
+        aria-label="검색어 지우기"
+        @click="emit('update-query', '')"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
 
     <p class="search-bar__hint">
       검색 중인 도시: <strong>{{ searchQuery || '전체' }}</strong>
     </p>
 
-    <div v-if="statusOptions.length > 1" class="search-bar__filters">
+    <div class="search-bar__filters">
       <button
         v-for="option in statusOptions"
         :key="option"
@@ -175,6 +184,30 @@ function onSearchInput(e) {
   outline: none;
   background: transparent;
   font-size: 14px;
+  color: var(--color-text);
+}
+
+.search-bar__clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-light);
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.search-bar__clear-btn:hover {
+  background: var(--color-primary-opacity-10);
   color: var(--color-text);
 }
 

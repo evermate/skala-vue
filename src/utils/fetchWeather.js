@@ -24,7 +24,7 @@ async function fetchFromOpenWeather(cities) {
       temp: Math.round(data.main?.temp ?? 0),
       feelsLike: Math.round(data.main?.feels_like ?? 0),
       humidity: Math.round(data.main?.humidity ?? 0),
-      windSpeed: data.wind?.speed ?? 0,
+      windSpeed: Math.round((data.wind?.speed ?? 0) * 10) / 10,
       status,
       icon,
     }
@@ -63,7 +63,7 @@ async function fetchFromOpenMeteo(cities) {
       feelsLike: Math.round(current?.apparent_temperature ?? 0),
       humidity: Math.round(current?.relative_humidity_2m ?? 0),
       // Open-Meteo 기본 풍속 단위는 km/h. OpenWeatherMap 경로(m/s)와 값을 맞추기 위해 변환한다.
-      windSpeed: (current?.wind_speed_10m ?? 0) / 3.6,
+      windSpeed: Math.round(((current?.wind_speed_10m ?? 0) / 3.6) * 10) / 10,
       status,
       icon,
     }

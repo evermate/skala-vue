@@ -42,11 +42,6 @@ const { unitSymbol: currentLocationUnitSymbol, displayTemp: currentLocationDispl
 
 const activeCities = computed(() => (region.value === 'domestic' ? KOREA_CITIES : WORLD_CITIES))
 
-const statusOptions = computed(() => [
-  '전체',
-  ...new Set(weatherList.value.map((item) => item.status)),
-])
-
 // 콤마로 여러 도시명을 한 번에 검색할 수 있게 한다 ("서울, 부산" -> 서울 또는 부산 매칭).
 // weatherList 자체가 이미 다 불러와 있는 목록(국내 22개/해외 14개)이라 API 재호출 없이
 // 메모리 안에서 필터만 확장하는 거라 추가 비용은 없다.
@@ -57,14 +52,35 @@ const searchTerms = computed(() =>
     .filter(Boolean),
 )
 
-const filteredWeatherList = computed(() =>
+// 검색어까지만 반영한 목록. 상태 필터 칩의 선택지를 여기서 뽑아서
+// "지금 검색된 도시들 중에 실제로 존재하는 상태"만 칩으로 보여준다.
+const searchedWeatherList = computed(() =>
   weatherList.value.filter(
     (item) =>
-      (searchTerms.value.length === 0 ||
-        searchTerms.value.some((term) => item.name.includes(term))) &&
-      (statusFilter.value === '전체' || item.status === statusFilter.value),
+      searchTerms.value.length === 0 ||
+      searchTerms.value.some((term) => item.name.includes(term)),
   ),
 )
+
+const statusOptions = computed(() => [
+  '전체',
+  ...new Set(searchedWeatherList.value.map((item) => item.status)),
+])
+
+const filteredWeatherList = computed(() =>
+  searchedWeatherList.value.filter(
+    (item) => statusFilter.value === '전체' || item.status === statusFilter.value,
+  ),
+)
+
+// 검색어가 바뀌어서 지금 선택된 상태 칩이 더 이상 후보에 없으면(예: "비" 선택 중
+// "서울"(맑음)을 검색), 칩이 안 보이는데 필터는 걸려 있어 결과가 0개로 보이는
+// 함정을 막기 위해 전체로 되돌린다.
+watch(statusOptions, (options) => {
+  if (!options.includes(statusFilter.value)) {
+    statusFilter.value = '전체'
+  }
+})
 
 // 캐시가 아직 안 지났으면 WeatherMap한테 넘겨서 geolocation을 다시 안 묻고
 // 마커만 조용히 복원하게 한다. 지났으면 null을 넘겨서 진짜로 다시 찾게 한다.
