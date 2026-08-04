@@ -49,6 +49,12 @@
   --font-sans: 'PretendardVariable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+html {
+  /* 홈(스크롤 생김)과 서비스 소개(스크롤 없음)를 오갈 때 스크롤바 유무로
+     본문 너비가 바뀌면서 sticky 네브바가 좌우로 흔들리는 걸 막는다. */
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   background: var(--color-background);
