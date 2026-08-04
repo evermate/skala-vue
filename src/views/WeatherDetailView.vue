@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
 import { fetchWeatherForCities } from '@/utils/fetchWeather'
+import { useDisplayTemp } from '@/composables/useDisplayTemp'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +12,8 @@ const router = useRouter()
 const city = ref(null)
 const isLoading = ref(false)
 const errorMessage = ref('')
+
+const { unitSymbol, displayTemp } = useDisplayTemp(() => city.value?.temp)
 
 async function loadCityWeather() {
   const cityId = route.params.cityId
@@ -61,7 +64,7 @@ onMounted(loadCityWeather)
       <dl class="weather-detail__list">
         <div class="weather-detail__row">
           <dt><i class="fa-solid fa-temperature-half"></i> 실시간 기온</dt>
-          <dd>{{ city.temp }}°C</dd>
+          <dd>{{ displayTemp }}{{ unitSymbol }}</dd>
         </div>
         <div class="weather-detail__row">
           <dt><i class="fa-solid" :class="city.icon"></i> 기상 현황</dt>

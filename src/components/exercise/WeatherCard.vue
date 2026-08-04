@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { useDisplayTemp } from '@/composables/useDisplayTemp'
 
 const props = defineProps({
   city: {
@@ -10,7 +11,9 @@ const props = defineProps({
 
 const emit = defineEmits(['select-card', 'click-detail'])
 
+// "더움/선선함" 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
 const isWarm = computed(() => props.city.temp >= 25)
+const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 </script>
 
 <template>
@@ -24,7 +27,7 @@ const isWarm = computed(() => props.city.temp >= 25)
       </div>
 
       <div class="weather-card__temp-block" :class="isWarm ? 'is-warm' : 'is-cool'">
-        <span class="weather-card__temp-value">{{ city.temp }}°</span>
+        <span class="weather-card__temp-value">{{ displayTemp }}{{ unitSymbol }}</span>
         <span class="weather-card__temp-label">{{
           isWarm ? '더움 (25도 이상)' : '선선함 (25도 미만)'
         }}</span>

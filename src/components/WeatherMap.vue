@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { convertTemp } from '@/utils/temperature'
+import { useDisplayTemp } from '@/composables/useDisplayTemp'
 
 // Vite로 번들링하면 Leaflet 기본 마커 이미지 경로가 깨져서 직접 재지정한다.
 delete L.Icon.Default.prototype._getIconUrl
@@ -31,6 +33,8 @@ const props = defineProps({
 
 const emit = defineEmits(['select-city'])
 
+const { unit, unitSymbol } = useDisplayTemp()
+
 const mapContainer = ref(null)
 let map = null
 const markers = new Map()
@@ -46,7 +50,10 @@ function renderMarkers() {
   props.cities.forEach((city) => {
     if (city.lat == null || city.lon == null) return
     const marker = L.marker([city.lat, city.lon]).addTo(map)
-    marker.bindPopup(`<strong>${city.name}</strong><br />${city.status} · ${city.temp}°C`)
+    const temp = convertTemp(city.temp, unit.value)
+    marker.bindPopup(
+      `<strong>${city.name}</strong><br />${city.status} · ${temp}${unitSymbol.value}`,
+    )
     marker.on('click', () => emit('select-city', city.id))
     markers.set(city.id, marker)
   })
@@ -76,6 +83,7 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.cities, renderMarkers)
+watch(unit, renderMarkers)
 
 watch(
   () => props.focusedCityId,

@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import { convertTemp } from '@/utils/temperature'
+import { useDisplayTemp } from '@/composables/useDisplayTemp'
 
 const props = defineProps({
   temp: {
@@ -15,6 +17,8 @@ const props = defineProps({
     default: 45,
   },
 })
+
+const { unit, unitSymbol, displayTemp } = useDisplayTemp(() => props.temp)
 
 function ratioOf(value) {
   const clamped = Math.min(Math.max(value, props.min), props.max)
@@ -32,7 +36,7 @@ const TICK_STEPS = 5
 const ticks = computed(() =>
   Array.from({ length: TICK_STEPS + 1 }, (_, i) => {
     const value = Math.round(props.min + ((props.max - props.min) * i) / TICK_STEPS)
-    return { value, ratio: ratioOf(value) }
+    return { value: convertTemp(value, unit.value), ratio: ratioOf(value) }
   }),
 )
 </script>
@@ -50,12 +54,12 @@ const ticks = computed(() =>
       :style="{ bottom: tick.ratio + '%' }"
     >
       <span class="thermometer__tick-mark"></span>
-      <span class="thermometer__tick-label">{{ tick.value }}°</span>
+      <span class="thermometer__tick-label">{{ tick.value }}{{ unitSymbol }}</span>
     </div>
 
     <div v-if="temp != null" class="thermometer__pointer" :style="{ bottom: ratio + '%' }">
       <span class="thermometer__pointer-label" :style="{ background: fillColor }">
-        {{ temp }}°
+        {{ displayTemp }}{{ unitSymbol }}
       </span>
     </div>
   </div>

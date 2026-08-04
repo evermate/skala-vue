@@ -99,7 +99,7 @@ onMounted(fetchWeatherList)
     <WeatherEffect :status="selectedCity?.status ?? null" />
 
     <h2 class="weather-dashboard__title">
-      <i class="fa-solid fa-cloud-sun-rain"></i> 과제 4: 라우터적용
+      <i class="fa-solid fa-cloud-sun-rain"></i> 종합실습 5: 스토어 적용
     </h2>
 
     <div class="weather-dashboard__layout">
