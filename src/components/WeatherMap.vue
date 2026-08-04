@@ -2,19 +2,8 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { convertTemp } from '@/utils/temperature'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
-
-// Vite로 번들링하면 Leaflet 기본 마커 이미지 경로가 깨져서 직접 재지정한다.
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
 
 const props = defineProps({
   cities: {
@@ -38,15 +27,59 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select-city'])
+const emit = defineEmits(['select-city', 'locate', 'view-detail'])
 
-const { unit, unitSymbol } = useDisplayTemp()
+const { unit } = useDisplayTemp()
 
 const mapContainer = ref(null)
 let map = null
 const markers = new Map()
+let currentLocationMarker = null
 // 전체 도시가 한눈에 보이는 기준 줌. 카드 클릭 시 이 값을 기준으로 상대적으로만 확대한다.
 let baseZoom = 6
+
+const isLocating = ref(false)
+const locateError = ref('')
+
+function createWeatherIcon(city, temp) {
+  const isWarm = city.temp >= 25
+  // 국내 도시는 이름이 대부분 2글자라, 그 경우에만 카드를 더 좁게 줄인다.
+  const isShort = props.region === 'domestic' && city.name.length <= 2
+  const width = isShort ? 26 : 34
+  const height = isShort ? 42 : 46
+  return L.divIcon({
+    className: 'weather-mini-marker-wrap',
+    html: `
+      <div class="weather-mini-marker ${isWarm ? 'is-warm' : 'is-cool'} ${isShort ? 'is-short' : ''}">
+        <span class="weather-mini-marker__name">${city.name}</span>
+        <i class="weather-mini-marker__icon fa-solid ${city.icon?.replace('fa-solid ', '') ?? 'fa-cloud'}"></i>
+        <span class="weather-mini-marker__temp">${temp}</span>
+      </div>
+    `,
+    iconSize: [width, height],
+    iconAnchor: [width / 2, height / 2],
+    popupAnchor: [0, -height / 2],
+  })
+}
+
+// 현재 위치 마커는 검색 필터로 갈아엎히는 markers Map과 별도로 관리되므로
+// (drawMarkers가 markers를 통째로 지우기 때문) 포커스 표시도 따로 처리한다.
+function getMarkerById(cityId) {
+  if (cityId === 'current-location') return currentLocationMarker
+  return markers.get(cityId)
+}
+
+function applyFocusHighlight() {
+  markers.forEach((marker, cityId) => {
+    const el = marker.getElement()?.querySelector('.weather-mini-marker')
+    el?.classList.toggle('is-focused', cityId === props.focusedCityId)
+  })
+
+  const currentEl = currentLocationMarker
+    ?.getElement()
+    ?.querySelector('.weather-current-location-marker')
+  currentEl?.classList.toggle('is-focused', props.focusedCityId === 'current-location')
+}
 
 function drawMarkers() {
   if (!map) return
@@ -56,14 +89,25 @@ function drawMarkers() {
 
   props.cities.forEach((city) => {
     if (city.lat == null || city.lon == null) return
-    const marker = L.marker([city.lat, city.lon]).addTo(map)
     const temp = convertTemp(city.temp, unit.value)
+    const marker = L.marker([city.lat, city.lon], { icon: createWeatherIcon(city, temp) }).addTo(
+      map,
+    )
+    // 마커 자체에 이미 이름·아이콘·온도가 다 보이므로, 팝업은 상세보기로 가는
+    // 버튼 하나만 제공한다 (같은 정보를 또 보여주지 않는다).
     marker.bindPopup(
-      `<strong>${city.name}</strong><br />${city.status} · ${temp}${unitSymbol.value}`,
+      `
+      <button type="button" class="weather-popup__detail-btn" data-city-id="${city.id}">
+        <i class="fa-solid fa-circle-info"></i> 상세보기
+      </button>
+    `,
+      { closeButton: false },
     )
     marker.on('click', () => emit('select-city', city.id))
     markers.set(city.id, marker)
   })
+
+  applyFocusHighlight()
 }
 
 function fitToBounds() {
@@ -77,14 +121,67 @@ function fitToBounds() {
   map.fitBounds(bounds, { padding })
 }
 
+// 우리가 허용한 범위(setMinZoom) 안에서 전체 도시가 다시 보이도록 되돌린다.
+function resetView() {
+  fitToBounds()
+}
+
+function locateMe() {
+  if (!navigator.geolocation) {
+    locateError.value = '이 브라우저는 위치 정보를 지원하지 않습니다.'
+    return
+  }
+
+  isLocating.value = true
+  locateError.value = ''
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      isLocating.value = false
+      const { latitude, longitude } = position.coords
+      if (!map) return
+
+      map.flyTo([latitude, longitude], 10, { duration: 0.8 })
+
+      currentLocationMarker?.remove()
+      currentLocationMarker = L.marker([latitude, longitude], {
+        icon: L.divIcon({
+          className: 'weather-mini-marker-wrap',
+          html: '<div class="weather-current-location-marker"><i class="fa-solid fa-location-crosshairs"></i></div>',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        }),
+      }).addTo(map)
+      applyFocusHighlight()
+
+      emit('locate', { lat: latitude, lon: longitude })
+    },
+    () => {
+      isLocating.value = false
+      locateError.value = '위치 정보를 가져오지 못했습니다.'
+    },
+    { enableHighAccuracy: true, timeout: 8000 },
+  )
+}
+
 onMounted(() => {
   map = L.map(mapContainer.value, { scrollWheelZoom: false }).setView([36.5, 127.8], 6)
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 18,
   }).addTo(map)
+
+  // 팝업은 Leaflet이 열 때마다 새로 그리므로, 버튼에 매번 리스너를 다는 대신
+  // 지도 컨테이너 하나에 위임해서 한 번만 건다.
+  mapContainer.value.addEventListener('click', (e) => {
+    const btn = e.target.closest('.weather-popup__detail-btn')
+    if (btn) emit('view-detail', btn.dataset.cityId)
+  })
+
   drawMarkers()
   fitToBounds()
+  // 페이지에 들어오자마자 현재 위치 날씨를 바로 보여준다.
+  locateMe()
 })
 
 onBeforeUnmount(() => {
@@ -101,8 +198,9 @@ watch(() => props.allCities, fitToBounds)
 watch(
   () => props.focusedCityId,
   (cityId) => {
+    applyFocusHighlight()
     if (!map || !cityId) return
-    const marker = markers.get(cityId)
+    const marker = getMarkerById(cityId)
     if (!marker) return
     // 국내는 기준 줌 대비 살짝만 확대하고, 해외는 도시 간 거리가 워낙 멀어서 추가 확대 없이 이동만 한다.
     const targetZoom = props.region === 'domestic' ? Math.min(baseZoom + 2, 10) : baseZoom
@@ -113,15 +211,213 @@ watch(
 </script>
 
 <template>
-  <div ref="mapContainer" class="weather-map"></div>
+  <div class="weather-map-container">
+    <div class="weather-map-toolbar">
+      <button type="button" class="weather-map-toolbar__btn" @click="resetView">
+        <i class="fa-solid fa-expand"></i> 전체보기
+      </button>
+      <button
+        type="button"
+        class="weather-map-toolbar__btn"
+        :disabled="isLocating"
+        @click="locateMe"
+      >
+        <i
+          class="fa-solid"
+          :class="isLocating ? 'fa-spinner fa-spin' : 'fa-location-crosshairs'"
+        ></i>
+        현위치
+      </button>
+    </div>
+    <p v-if="locateError" class="weather-map-toolbar__error">{{ locateError }}</p>
+    <div ref="mapContainer" class="weather-map"></div>
+  </div>
 </template>
 
 <style scoped>
+.weather-map-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.weather-map-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.weather-map-toolbar__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-small);
+  background: var(--color-card-background);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.weather-map-toolbar__btn:hover:not(:disabled) {
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
+  color: #ffffff;
+}
+
+.weather-map-toolbar__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.weather-map-toolbar__error {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-error);
+}
+
 .weather-map {
   width: 100%;
-  min-height: 360px;
-  height: 100%;
+  min-height: 300px;
+  flex: 1;
   border-radius: var(--border-radius-medium);
   overflow: hidden;
+}
+</style>
+
+<!-- Leaflet이 divIcon HTML을 직접 DOM에 꽂아 넣어서(Vue 렌더 트리 밖) scoped 스타일이 안 먹는다. -->
+<style>
+.weather-mini-marker-wrap {
+  background: transparent;
+  border: none;
+}
+
+.weather-mini-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 34px;
+  padding: 2px 1px;
+  border-radius: var(--border-radius-small);
+  background: var(--color-card-background);
+  border: 1px solid var(--border-color-default);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  line-height: 1.1;
+}
+
+.weather-mini-marker__name {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.weather-mini-marker__icon {
+  font-size: 11px;
+  color: var(--color-primary-darker);
+}
+
+.weather-mini-marker__temp {
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.weather-mini-marker.is-short {
+  width: 26px;
+  padding: 2px 0;
+}
+
+.weather-mini-marker.is-short .weather-mini-marker__name {
+  font-size: 7px;
+}
+
+.weather-mini-marker.is-short .weather-mini-marker__icon {
+  font-size: 10px;
+}
+
+.weather-mini-marker.is-short .weather-mini-marker__temp {
+  font-size: 8px;
+}
+
+.weather-mini-marker.is-warm .weather-mini-marker__temp {
+  color: var(--color-warm);
+}
+
+.weather-mini-marker.is-cool .weather-mini-marker__temp {
+  color: var(--color-info);
+}
+
+.weather-mini-marker.is-focused {
+  border-color: var(--color-primary-darker);
+  border-width: 2px;
+  box-shadow:
+    0 0 0 2px var(--color-primary-opacity-30),
+    var(--shadow-hover);
+}
+
+.weather-current-location-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  background: var(--color-primary-darker);
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: var(--shadow-hover);
+}
+
+.weather-current-location-marker.is-focused {
+  box-shadow:
+    0 0 0 3px var(--color-primary-opacity-30),
+    var(--shadow-hover);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--shadow-hover);
+}
+
+.leaflet-popup-content {
+  margin: 4px 6px;
+}
+
+.weather-popup__detail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: var(--border-radius-small);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.weather-popup__detail-btn:hover {
+  background: var(--color-primary-opacity-10);
+  color: var(--color-primary-darker);
 }
 </style>

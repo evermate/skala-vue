@@ -7,6 +7,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  isFocused: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const emit = defineEmits(['select-card', 'click-detail'])
@@ -17,7 +21,11 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 </script>
 
 <template>
-  <li class="weather-card" @click="emit('select-card', city.id)">
+  <li
+    class="weather-card"
+    :class="{ 'is-focused': isFocused }"
+    @click="emit('select-card', city.id)"
+  >
     <div class="weather-card__header">
       <div class="weather-card__info">
         <i class="weather-card__icon" :class="city.icon"></i>
@@ -60,6 +68,14 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
   border-color: var(--color-primary-darker);
   box-shadow: var(--shadow-hover);
   transform: translateY(-1px);
+}
+
+.weather-card.is-focused {
+  border-color: var(--color-primary-darker);
+  border-width: 2px;
+  box-shadow:
+    0 0 0 2px var(--color-primary-opacity-30),
+    var(--shadow-hover);
 }
 
 .weather-card__header {
