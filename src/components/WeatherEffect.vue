@@ -10,7 +10,7 @@ const props = defineProps({
 
 const EFFECT_MAP = {
   맑음: 'sunny',
-  구름조금: 'sunny',
+  구름조금: 'partly-cloudy',
   흐림: 'cloudy',
   안개: 'foggy',
   이슬비: 'rain',
@@ -54,9 +54,9 @@ const clouds = randomParticles(6, () => ({
   <div class="weather-effect" :class="effectType">
     <div v-if="effectType" class="sky-wash"></div>
 
-    <div v-if="effectType === 'sunny'" class="sun-glow"></div>
+    <div v-if="effectType === 'sunny' || effectType === 'partly-cloudy'" class="sun-glow"></div>
 
-    <template v-if="effectType === 'sunny' || effectType === 'cloudy'">
+    <template v-if="effectType === 'partly-cloudy' || effectType === 'cloudy'">
       <span
         v-for="(cloud, i) in clouds"
         :key="'cloud-' + i"
@@ -121,7 +121,8 @@ const clouds = randomParticles(6, () => ({
   animation: wash-in 1s ease forwards;
 }
 
-.weather-effect.sunny .sky-wash {
+.weather-effect.sunny .sky-wash,
+.weather-effect.partly-cloudy .sky-wash {
   background: linear-gradient(
     180deg,
     rgba(251, 191, 36, 0.5) 0%,
