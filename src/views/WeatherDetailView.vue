@@ -32,32 +32,13 @@ function formatForecastDate(dateStr) {
   return `${date.getMonth() + 1}/${date.getDate()} (${WEEKDAYS[date.getDay()]})`
 }
 
-// 미세먼지·예보는 상세 화면을 보조하는 부가 정보라, 실패해도 메인 날씨 표시는 그대로 두고
-// 이 영역만 조용히 비워 둔다.
-async function loadExtras(target) {
-  airQualityLoading.value = true
-  forecastLoading.value = true
-
-  const [airQualityResult, forecastResult] = await Promise.allSettled([
-    fetchAirQuality(target),
-    fetchForecast(target),
-  ])
-
-  if (airQualityResult.status === 'fulfilled') airQuality.value = airQualityResult.value
-  airQualityLoading.value = false
-
-  if (forecastResult.status === 'fulfilled') forecast.value = forecastResult.value
-  forecastLoading.value = false
-}
-
-async function loadWeatherFor(target) {
+async function loadMainWeather(target) {
   isLoading.value = true
   errorMessage.value = ''
 
   try {
     const [result] = await fetchWeatherForCities([target])
     city.value = result
-    loadExtras(target)
   } catch (error) {
     errorMessage.value = getWeatherErrorMessage(error)
   } finally {
@@ -65,7 +46,39 @@ async function loadWeatherFor(target) {
   }
 }
 
-async function loadCityWeather() {
+// 미세먼지·예보는 상세 화면을 보조하는 부가 정보라, 메인 날씨와 서로 기다리지 않고
+// 각자 준비되는 대로 채워진다. 실패해도 그 섹션만 "불러오지 못함"으로 남고 나머지엔 영향 없다.
+async function loadAirQuality(target) {
+  airQualityLoading.value = true
+  try {
+    airQuality.value = await fetchAirQuality(target)
+  } catch {
+    airQuality.value = null
+  } finally {
+    airQualityLoading.value = false
+  }
+}
+
+async function loadForecast(target) {
+  forecastLoading.value = true
+  try {
+    forecast.value = await fetchForecast(target)
+  } catch {
+    forecast.value = []
+  } finally {
+    forecastLoading.value = false
+  }
+}
+
+function loadWeatherFor(target) {
+  // 셋 다 위경도만 있으면 되고 서로 의존관계가 없어서, 하나가 끝나야 다음이
+  // 시작하는 게 아니라 처음부터 동시에 쏜다.
+  loadMainWeather(target)
+  loadAirQuality(target)
+  loadForecast(target)
+}
+
+function loadCityWeather() {
   const cityId = route.params.cityId
 
   // "현위치" 버튼처럼 목록에 없는 임의 좌표는 쿼리스트링(lat/lon/name)으로 받는다.
@@ -77,7 +90,7 @@ async function loadCityWeather() {
       return
     }
     isDomestic.value = false
-    await loadWeatherFor({
+    loadWeatherFor({
       id: 'current-location',
       name: route.query.name || '현재 위치',
       lat,
@@ -95,7 +108,7 @@ async function loadCityWeather() {
   }
 
   isDomestic.value = Boolean(foundInKorea)
-  await loadWeatherFor(found)
+  loadWeatherFor(found)
 }
 
 function goHome() {
@@ -107,9 +120,14 @@ onMounted(loadCityWeather)
 
 <template>
   <div class="weather-detail">
-    <h2 class="weather-detail__title">
-      <i class="fa-solid fa-location-dot"></i> 지역별 상세 기상관측 정보
-    </h2>
+    <div class="weather-detail__header">
+      <button class="weather-detail__back-btn" @click="goHome">
+        <i class="fa-solid fa-arrow-left"></i> 뒤로가기
+      </button>
+      <h2 class="weather-detail__title">
+        <i class="fa-solid fa-location-dot"></i> 지역별 상세 기상관측 정보
+      </h2>
+    </div>
 
     <p v-if="isLoading" class="weather-detail__empty">
       <i class="fa-solid fa-spinner fa-spin"></i> 날씨 정보를 불러오는 중입니다...
@@ -180,10 +198,6 @@ onMounted(loadCityWeather)
         <p v-else class="weather-detail__section-empty">예보 정보를 불러오지 못했습니다.</p>
       </div>
     </template>
-
-    <button class="weather-detail__back-btn" @click="goHome">
-      <i class="fa-solid fa-arrow-left"></i> 메인 대시보드로 돌아가기
-    </button>
   </div>
 </template>
 
@@ -194,11 +208,18 @@ onMounted(loadCityWeather)
   padding: 0 16px;
 }
 
+.weather-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
 .weather-detail__title {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 20px;
+  margin: 0;
   font-size: 20px;
   color: var(--color-text);
 }
@@ -348,19 +369,20 @@ onMounted(loadCityWeather)
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 16px;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px;
   border: 1px solid var(--border-color-default);
   border-radius: var(--border-radius-medium);
   background: var(--color-card-background);
-  color: var(--color-text);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition:
     background 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .weather-detail__back-btn:hover {
