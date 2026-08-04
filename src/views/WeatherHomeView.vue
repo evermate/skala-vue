@@ -10,7 +10,7 @@ import WeatherThermometer from '@/components/WeatherThermometer.vue'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
 import { WEATHER_LEGEND } from '@/utils/openWeatherCode'
-import { fetchWeatherForCities } from '@/utils/fetchWeather'
+import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 
 const router = useRouter()
 
@@ -46,8 +46,8 @@ async function fetchWeatherList() {
 
   try {
     weatherList.value = await fetchWeatherForCities(activeCities.value)
-  } catch {
-    errorMessage.value = '날씨 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+  } catch (error) {
+    errorMessage.value = getWeatherErrorMessage(error)
   } finally {
     isLoading.value = false
   }

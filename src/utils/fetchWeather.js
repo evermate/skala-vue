@@ -40,7 +40,11 @@ async function fetchFromOpenMeteo(cities) {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=${fields}&timezone=Asia%2FSeoul`
 
   const response = await fetch(url)
-  if (!response.ok) throw new Error('날씨 데이터를 불러오지 못했습니다.')
+  if (!response.ok) {
+    const error = new Error('날씨 데이터를 불러오지 못했습니다.')
+    error.status = response.status
+    throw error
+  }
 
   const data = await response.json()
   // Open-Meteo는 좌표가 1개일 때는 단일 객체를, 2개 이상일 때는 배열을 반환한다.
@@ -80,4 +84,12 @@ export async function fetchWeatherForCities(cities) {
   }
 
   return fetchFromOpenMeteo(cities)
+}
+
+// fetchWeatherForCities가 던진 에러를 화면에 보여줄 문구로 변환한다.
+export function getWeatherErrorMessage(error) {
+  if (error?.status === 429) {
+    return '요청이 너무 많습니다 (429 Too Many Requests). 잠시 후 다시 시도해 주세요.'
+  }
+  return '날씨 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
 }
