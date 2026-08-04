@@ -15,26 +15,30 @@ import { WEATHER_LEGEND } from '@/utils/openWeatherCode'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 import { reverseGeocode } from '@/utils/fetchWeatherExtras'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
+import { withSubjectParticle } from '@/utils/korean'
 
 const router = useRouter()
+const dashboardStore = useDashboardStore()
 
-const weatherList = ref([])
+const {
+  region,
+  weatherList,
+  searchQuery,
+  statusFilter,
+  selectedCityInfo,
+  selectedCity,
+  focusedCityId,
+  currentLocationCity,
+  currentLocationPlaceName,
+} = storeToRefs(dashboardStore)
+
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-const currentLocationCity = ref(null)
-const currentLocationPlaceName = ref('')
 const currentLocationLoading = ref(false)
 const currentLocationError = ref('')
 const { unitSymbol: currentLocationUnitSymbol, displayTemp: currentLocationDisplayTemp } =
   useDisplayTemp(() => currentLocationCity.value?.temp)
-
-const { region } = storeToRefs(useDashboardStore())
-const searchQuery = ref('')
-const statusFilter = ref('전체')
-const selectedCityInfo = ref('')
-const focusedCityId = ref(null)
-const selectedCity = ref(null)
 
 const activeCities = computed(() => (region.value === 'domestic' ? KOREA_CITIES : WORLD_CITIES))
 
@@ -43,20 +47,42 @@ const statusOptions = computed(() => [
   ...new Set(weatherList.value.map((item) => item.status)),
 ])
 
+// 콤마로 여러 도시명을 한 번에 검색할 수 있게 한다 ("서울, 부산" -> 서울 또는 부산 매칭).
+// weatherList 자체가 이미 다 불러와 있는 목록(국내 22개/해외 14개)이라 API 재호출 없이
+// 메모리 안에서 필터만 확장하는 거라 추가 비용은 없다.
+const searchTerms = computed(() =>
+  searchQuery.value
+    .split(',')
+    .map((term) => term.trim())
+    .filter(Boolean),
+)
+
 const filteredWeatherList = computed(() =>
   weatherList.value.filter(
     (item) =>
-      item.name.includes(searchQuery.value) &&
+      (searchTerms.value.length === 0 ||
+        searchTerms.value.some((term) => item.name.includes(term))) &&
       (statusFilter.value === '전체' || item.status === statusFilter.value),
   ),
 )
 
-async function fetchWeatherList() {
+// 캐시가 아직 안 지났으면 WeatherMap한테 넘겨서 geolocation을 다시 안 묻고
+// 마커만 조용히 복원하게 한다. 지났으면 null을 넘겨서 진짜로 다시 찾게 한다.
+const cachedCurrentLocation = computed(() =>
+  dashboardStore.isCurrentLocationFresh() ? currentLocationCity.value : null,
+)
+
+// 상세보기를 다녀오는 정도의 재진입에서는 굳이 다시 안 부르고 캐시를 그대로 쓴다.
+// (10분 TTL — dashboardStore 참고. 백그라운드 자동 새로고침은 안 하고, 재진입 시점에만 체크한다.)
+async function fetchWeatherList({ force = false } = {}) {
+  if (!force && dashboardStore.isWeatherListFresh(region.value)) return
+
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    weatherList.value = await fetchWeatherForCities(activeCities.value)
+    const result = await fetchWeatherForCities(activeCities.value)
+    dashboardStore.setWeatherList(result, region.value)
   } catch (error) {
     errorMessage.value = getWeatherErrorMessage(error)
   } finally {
@@ -91,7 +117,7 @@ function onSearchEnter() {
 function selectCity(cityId) {
   const city = weatherList.value.find((item) => item.id === cityId)
   if (!city) return
-  selectedCityInfo.value = `${city.name}이 선택되었습니다.`
+  selectedCityInfo.value = `${withSubjectParticle(city.name)} 선택되었습니다.`
   focusedCityId.value = cityId
   selectedCity.value = city
 }
@@ -110,19 +136,23 @@ async function onLocate({ lat, lon }) {
   ])
 
   if (weatherResult.status === 'fulfilled') {
-    currentLocationCity.value = weatherResult.value[0]
+    // 지명은 부가 정보라 실패해도 날씨 표시엔 영향 없이 그냥 city.name("현재 위치")으로 남는다.
+    const placeName = placeResult.status === 'fulfilled' ? placeResult.value : ''
+    dashboardStore.setCurrentLocation(weatherResult.value[0], placeName)
+    // 현위치 버튼을 누른 건 "내 위치를 보고 싶다"는 명시적 의도라, 이전에 선택돼 있던
+    // 다른 카드 포커스를 그대로 두지 않고 현재 위치로 선택 상태를 넘긴다.
+    selectCurrentLocation()
   } else {
     currentLocationError.value = getWeatherErrorMessage(weatherResult.reason)
   }
-  // 지명은 부가 정보라 실패해도 날씨 표시엔 영향 없이 그냥 city.name("현재 위치")으로 남는다.
-  if (placeResult.status === 'fulfilled') currentLocationPlaceName.value = placeResult.value
 
   currentLocationLoading.value = false
 }
 
 function selectCurrentLocation() {
   if (!currentLocationCity.value) return
-  selectedCityInfo.value = `${currentLocationCity.value.name}이 선택되었습니다.`
+  const label = currentLocationPlaceName.value || currentLocationCity.value.name
+  selectedCityInfo.value = `${withSubjectParticle(label)} 선택되었습니다.`
   focusedCityId.value = 'current-location'
   selectedCity.value = currentLocationCity.value
 }
@@ -203,10 +233,6 @@ onMounted(fetchWeatherList)
           </ul>
           <p v-else class="weather-dashboard__empty">검색 결과가 일치하는 도시가 없습니다.</p>
         </BaseDashboardCard>
-
-        <p class="weather-dashboard__status">
-          {{ selectedCityInfo || '카드를 클릭하거나 검색해 보세요.' }}
-        </p>
       </div>
 
       <div class="weather-dashboard__side">
@@ -214,6 +240,10 @@ onMounted(fetchWeatherList)
           icon="fa-solid fa-map-location-dot"
           :title="region === 'domestic' ? '국내 지도' : '해외 지도'"
         >
+          <template v-if="selectedCityInfo" #title-extra>
+            <span class="weather-dashboard__map-status">{{ selectedCityInfo }}</span>
+          </template>
+
           <div class="weather-dashboard__map-row">
             <div class="weather-dashboard__map-wrap">
               <WeatherMap
@@ -221,6 +251,7 @@ onMounted(fetchWeatherList)
                 :all-cities="weatherList"
                 :focused-city-id="focusedCityId"
                 :region="region"
+                :current-location="cachedCurrentLocation"
                 @select-city="selectCity"
                 @locate="onLocate"
                 @view-detail="goToDetail"
@@ -442,14 +473,13 @@ onMounted(fetchWeatherList)
   color: #ffffff;
 }
 
-.weather-dashboard__status {
-  margin: 4px 0 0;
-  padding: 10px 16px;
-  border-radius: var(--border-radius-medium);
+.weather-dashboard__map-status {
+  padding: 4px 10px;
+  border-radius: 999px;
   background: var(--color-success-bg);
   color: var(--color-success);
-  font-size: 14px;
-  font-weight: 600;
-  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 </style>

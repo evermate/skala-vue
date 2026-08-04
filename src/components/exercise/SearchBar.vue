@@ -54,7 +54,7 @@ function onSearchInput(e) {
       <i class="fa-solid fa-magnifying-glass search-bar__icon"></i>
       <input
         type="text"
-        placeholder="검색할 도시 이름 입력"
+        placeholder="검색할 도시 이름 입력 (예: 서울, 부산)"
         :value="searchQuery"
         @input="onSearchInput"
         @keyup.enter="emit('search-enter')"

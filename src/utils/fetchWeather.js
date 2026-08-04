@@ -2,6 +2,7 @@ import axios from 'axios'
 import { weatherApi } from './axiosClient'
 import { getWeatherInfo as getOpenWeatherStatus } from './openWeatherCode'
 import { getWeatherInfo as getOpenMeteoStatus } from './openMeteoCode'
+import { fetchWithTimeout } from './fetchWithTimeout'
 
 // OpenWeatherMap Current Weather API는 Open-Meteo와 달리 좌표를 한 번에 묶어 조회할 수 없어서
 // 도시마다 개별 요청을 axios.all로 병렬 실행한다.
@@ -39,7 +40,7 @@ async function fetchFromOpenMeteo(cities) {
     'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weathercode'
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=${fields}&timezone=Asia%2FSeoul`
 
-  const response = await fetch(url)
+  const response = await fetchWithTimeout(url)
   if (!response.ok) {
     const error = new Error('날씨 데이터를 불러오지 못했습니다.')
     error.status = response.status

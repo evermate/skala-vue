@@ -25,6 +25,11 @@ const props = defineProps({
     type: String,
     default: 'domestic',
   },
+  // 캐시가 아직 안 지난 현재 위치. 있으면 geolocation을 다시 안 묻고 마커만 복원한다.
+  currentLocation: {
+    type: Object,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['select-city', 'locate', 'view-detail'])
@@ -126,6 +131,33 @@ function resetView() {
   fitToBounds()
 }
 
+// 마커 하나에 포커스할 때 쓰는 줌 — 현재 위치든 일반 도시 마커든 동일하게 적용해서
+// 지역(국내/해외)마다 확대 정도가 어긋나지 않게 한다.
+function getFocusZoom() {
+  // 국내는 기준 줌(전체보기 줌) 대비 살짝만 확대한다.
+  if (props.region === 'domestic') return Math.min(baseZoom + 2, 10)
+  // 해외는 기준 줌 자체가 지구 전체가 보이는 수준으로 낮아서, 거기서 조금은 확대하되
+  // 너무 바짝 확대되지는 않게 최소 줌만 보장한다.
+  return Math.max(baseZoom + 1, 5)
+}
+
+function showCurrentLocationMarker(lat, lon, { fly = true } = {}) {
+  if (!map) return
+
+  if (fly) map.flyTo([lat, lon], getFocusZoom(), { duration: 0.8 })
+
+  currentLocationMarker?.remove()
+  currentLocationMarker = L.marker([lat, lon], {
+    icon: L.divIcon({
+      className: 'weather-mini-marker-wrap',
+      html: '<div class="weather-current-location-marker"><i class="fa-solid fa-location-crosshairs"></i></div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    }),
+  }).addTo(map)
+  applyFocusHighlight()
+}
+
 function locateMe() {
   if (!navigator.geolocation) {
     locateError.value = '이 브라우저는 위치 정보를 지원하지 않습니다.'
@@ -139,21 +171,7 @@ function locateMe() {
     (position) => {
       isLocating.value = false
       const { latitude, longitude } = position.coords
-      if (!map) return
-
-      map.flyTo([latitude, longitude], 10, { duration: 0.8 })
-
-      currentLocationMarker?.remove()
-      currentLocationMarker = L.marker([latitude, longitude], {
-        icon: L.divIcon({
-          className: 'weather-mini-marker-wrap',
-          html: '<div class="weather-current-location-marker"><i class="fa-solid fa-location-crosshairs"></i></div>',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-        }),
-      }).addTo(map)
-      applyFocusHighlight()
-
+      showCurrentLocationMarker(latitude, longitude)
       emit('locate', { lat: latitude, lon: longitude })
     },
     () => {
@@ -180,8 +198,15 @@ onMounted(() => {
 
   drawMarkers()
   fitToBounds()
-  // 페이지에 들어오자마자 현재 위치 날씨를 바로 보여준다.
-  locateMe()
+  // 캐시가 있으면(재진입) geolocation을 다시 안 묻고 마커만 조용히 복원하고,
+  // 없으면(첫 진입) 실제로 위치 권한을 물어서 새로 찾는다.
+  if (props.currentLocation) {
+    showCurrentLocationMarker(props.currentLocation.lat, props.currentLocation.lon, {
+      fly: false,
+    })
+  } else {
+    locateMe()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -202,9 +227,8 @@ watch(
     if (!map || !cityId) return
     const marker = getMarkerById(cityId)
     if (!marker) return
-    // 국내는 기준 줌 대비 살짝만 확대하고, 해외는 도시 간 거리가 워낙 멀어서 추가 확대 없이 이동만 한다.
-    const targetZoom = props.region === 'domestic' ? Math.min(baseZoom + 2, 10) : baseZoom
-    map.flyTo(marker.getLatLng(), targetZoom, { duration: 0.8 })
+
+    map.flyTo(marker.getLatLng(), getFocusZoom(), { duration: 0.8 })
     marker.openPopup()
   },
 )
