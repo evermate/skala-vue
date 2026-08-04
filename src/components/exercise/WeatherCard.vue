@@ -6,10 +6,6 @@ const props = defineProps({
     type: Object,
     required: true,
   },
-  isExpanded: {
-    type: Boolean,
-    default: false,
-  },
 })
 
 const emit = defineEmits(['select-card', 'click-detail'])
@@ -35,30 +31,8 @@ const isWarm = computed(() => props.city.temp >= 25)
       </div>
     </div>
 
-    <Transition name="detail">
-      <dl v-if="isExpanded" class="weather-card__detail">
-        <div class="weather-card__detail-row">
-          <dt><i class="fa-solid fa-temperature-half"></i> 체감 온도</dt>
-          <dd>{{ city.feelsLike }}°C</dd>
-        </div>
-        <div class="weather-card__detail-row">
-          <dt><i class="fa-solid fa-droplet"></i> 습도</dt>
-          <dd>{{ city.humidity }}%</dd>
-        </div>
-        <div class="weather-card__detail-row">
-          <dt><i class="fa-solid fa-wind"></i> 풍속</dt>
-          <dd>{{ city.windSpeed }}km/h</dd>
-        </div>
-      </dl>
-    </Transition>
-
-    <button
-      class="weather-card__detail-btn"
-      :class="{ 'is-active': isExpanded }"
-      @click.stop="emit('click-detail', city.id)"
-    >
-      <i class="fa-solid" :class="isExpanded ? 'fa-chevron-up' : 'fa-circle-info'"></i>
-      {{ isExpanded ? '접기' : '상세보기' }}
+    <button class="weather-card__detail-btn" @click.stop="emit('click-detail', city.id)">
+      <i class="fa-solid fa-circle-info"></i> 상세보기
     </button>
   </li>
 </template>
@@ -70,8 +44,8 @@ const isWarm = computed(() => props.city.temp >= 25)
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-large);
   cursor: pointer;
   transition:
     box-shadow 0.15s ease,
@@ -80,8 +54,8 @@ const isWarm = computed(() => props.city.temp >= 25)
 }
 
 .weather-card:hover {
-  border-color: var(--aurora-1);
-  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-darker);
+  box-shadow: var(--shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -101,7 +75,7 @@ const isWarm = computed(() => props.city.temp >= 25)
 
 .weather-card__icon {
   font-size: 20px;
-  color: var(--aurora-2);
+  color: var(--color-primary);
   width: 24px;
   text-align: center;
   flex-shrink: 0;
@@ -111,7 +85,7 @@ const isWarm = computed(() => props.city.temp >= 25)
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -119,7 +93,7 @@ const isWarm = computed(() => props.city.temp >= 25)
 
 .weather-card__status {
   font-weight: 400;
-  color: var(--text-dim);
+  color: var(--color-text-secondary);
 }
 
 .weather-card__temp-block {
@@ -139,71 +113,16 @@ const isWarm = computed(() => props.city.temp >= 25)
   margin-top: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-dim);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .weather-card__temp-block.is-warm {
-  color: var(--warm-text);
+  color: var(--color-warm);
 }
 
 .weather-card__temp-block.is-cool {
-  color: var(--cool-text);
-}
-
-.weather-card__detail {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 10px 12px;
-  background: var(--surface-muted);
-  border-radius: var(--radius-sm);
-}
-
-.weather-card__detail-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-}
-
-.weather-card__detail-row dt {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-dim);
-}
-
-.weather-card__detail-row dt i {
-  width: 14px;
-  color: var(--aurora-1);
-}
-
-.weather-card__detail-row dd {
-  margin: 0;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.detail-enter-active,
-.detail-leave-active {
-  transition:
-    opacity 0.15s ease,
-    max-height 0.2s ease;
-  overflow: hidden;
-}
-
-.detail-enter-from,
-.detail-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-
-.detail-enter-to,
-.detail-leave-from {
-  opacity: 1;
-  max-height: 120px;
+  color: var(--color-info);
 }
 
 .weather-card__detail-btn {
@@ -212,10 +131,10 @@ const isWarm = computed(() => props.city.temp >= 25)
   justify-content: center;
   gap: 6px;
   padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text-dim);
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-small);
+  background: var(--color-card-background);
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -225,10 +144,9 @@ const isWarm = computed(() => props.city.temp >= 25)
     color 0.15s ease;
 }
 
-.weather-card__detail-btn:hover,
-.weather-card__detail-btn.is-active {
-  background: var(--aurora-1);
-  border-color: var(--aurora-1);
+.weather-card__detail-btn:hover {
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
   color: #ffffff;
 }
 </style>

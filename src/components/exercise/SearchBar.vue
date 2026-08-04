@@ -92,8 +92,8 @@ function onSearchInput(e) {
   height: 42px;
   padding: 3px;
   box-sizing: border-box;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
+  background: var(--color-primary-opacity-10);
+  border: 1px solid var(--border-color-default);
   border-radius: 999px;
 }
 
@@ -103,7 +103,7 @@ function onSearchInput(e) {
   bottom: 3px;
   left: 3px;
   width: calc(50% - 3px);
-  background: linear-gradient(135deg, var(--aurora-1), var(--aurora-2));
+  background: linear-gradient(135deg, var(--color-primary-darker), var(--color-primary));
   border-radius: 999px;
   transition: transform 0.25s ease;
 }
@@ -125,7 +125,7 @@ function onSearchInput(e) {
   border: none;
   border-radius: 999px;
   background: transparent;
-  color: var(--text-dim);
+  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
@@ -151,20 +151,20 @@ function onSearchInput(e) {
   height: 42px;
   padding: 0 12px;
   box-sizing: border-box;
-  background: var(--surface-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  background: var(--color-primary-opacity-10);
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-medium);
   transition: border-color 0.15s ease;
 }
 
 .search-bar__field:focus-within {
-  border-color: var(--aurora-1);
-  background: var(--surface);
+  border-color: var(--color-primary-darker);
+  background: var(--color-card-background);
 }
 
 .search-bar__icon {
   font-size: 13px;
-  color: var(--text-faint);
+  color: var(--color-text-light);
 }
 
 .search-bar__field input {
@@ -174,13 +174,13 @@ function onSearchInput(e) {
   outline: none;
   background: transparent;
   font-size: 14px;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .search-bar__hint {
   margin: 0;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--color-text-secondary);
 }
 
 .search-bar__filters {
@@ -192,10 +192,10 @@ function onSearchInput(e) {
 
 .search-bar__chip {
   padding: 4px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-color-default);
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-dim);
+  background: var(--color-card-background);
+  color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -206,13 +206,13 @@ function onSearchInput(e) {
 }
 
 .search-bar__chip:hover {
-  border-color: var(--aurora-1);
-  color: var(--aurora-1);
+  border-color: var(--color-primary-darker);
+  color: var(--color-primary-darker);
 }
 
 .search-bar__chip.is-active {
-  background: var(--aurora-1);
-  border-color: var(--aurora-1);
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
   color: #ffffff;
 }
 </style>

@@ -1,14 +1,18 @@
 <script setup>
 import { ref, computed, watch, watchEffect, onMounted } from 'vue'
-import BaseDashboardCard from './BaseDashboardCard.vue'
-import SearchBar from './SearchBar.vue'
-import WeatherCard from './WeatherCard.vue'
-import WeatherMap from './WeatherMap.vue'
-import WeatherEffect from './WeatherEffect.vue'
-import WeatherThermometer from './WeatherThermometer.vue'
+import { useRouter } from 'vue-router'
+import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
+import SearchBar from '@/components/exercise/SearchBar.vue'
+import WeatherCard from '@/components/exercise/WeatherCard.vue'
+import WeatherMap from '@/components/WeatherMap.vue'
+import WeatherEffect from '@/components/WeatherEffect.vue'
+import WeatherThermometer from '@/components/WeatherThermometer.vue'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
-import { getWeatherInfo, WEATHER_LEGEND } from '@/utils/weatherCode'
+import { WEATHER_LEGEND } from '@/utils/weatherCode'
+import { fetchWeatherForCities } from '@/utils/fetchWeather'
+
+const router = useRouter()
 
 const weatherList = ref([])
 const isLoading = ref(false)
@@ -18,7 +22,6 @@ const region = ref('domestic')
 const searchQuery = ref('')
 const statusFilter = ref('전체')
 const selectedCityInfo = ref('')
-const expandedCityId = ref(null)
 const focusedCityId = ref(null)
 const selectedCity = ref(null)
 
@@ -42,34 +45,7 @@ async function fetchWeatherList() {
   errorMessage.value = ''
 
   try {
-    const cities = activeCities.value
-    const latitude = cities.map((city) => city.lat).join(',')
-    const longitude = cities.map((city) => city.lon).join(',')
-    const fields =
-      'temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weathercode'
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=${fields}&timezone=Asia%2FSeoul`
-
-    const response = await fetch(url)
-    if (!response.ok) throw new Error('날씨 데이터를 불러오지 못했습니다.')
-
-    const results = await response.json()
-
-    weatherList.value = cities.map((city, index) => {
-      const current = results[index]?.current
-      const { status, icon } = getWeatherInfo(current?.weathercode)
-      return {
-        id: city.id,
-        name: city.name,
-        lat: city.lat,
-        lon: city.lon,
-        temp: Math.round(current?.temperature_2m ?? 0),
-        feelsLike: Math.round(current?.apparent_temperature ?? 0),
-        humidity: Math.round(current?.relative_humidity_2m ?? 0),
-        windSpeed: current?.wind_speed_10m ?? 0,
-        status,
-        icon,
-      }
-    })
+    weatherList.value = await fetchWeatherForCities(activeCities.value)
   } catch {
     errorMessage.value = '날씨 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
   } finally {
@@ -86,7 +62,6 @@ function onUpdateRegion(value) {
   region.value = value
   searchQuery.value = ''
   statusFilter.value = '전체'
-  expandedCityId.value = null
   focusedCityId.value = null
   selectedCity.value = null
   fetchWeatherList()
@@ -104,8 +79,8 @@ function selectCity(cityId) {
   selectedCity.value = city
 }
 
-function toggleDetail(cityId) {
-  expandedCityId.value = expandedCityId.value === cityId ? null : cityId
+function goToDetail(cityId) {
+  router.push('/weather/' + cityId)
 }
 
 watch(selectedCityInfo, (newValue) => {
@@ -124,7 +99,7 @@ onMounted(fetchWeatherList)
     <WeatherEffect :status="selectedCity?.status ?? null" />
 
     <h2 class="weather-dashboard__title">
-      <i class="fa-solid fa-cloud-sun-rain"></i> 과제 4: 날씨 (컴포넌트)
+      <i class="fa-solid fa-cloud-sun-rain"></i> 과제 4: 라우터적용
     </h2>
 
     <div class="weather-dashboard__layout">
@@ -168,9 +143,8 @@ onMounted(fetchWeatherList)
               v-for="item in filteredWeatherList"
               :key="item.id"
               :city="item"
-              :is-expanded="item.id === expandedCityId"
               @select-card="selectCity"
-              @click-detail="toggleDetail"
+              @click-detail="goToDetail"
             />
           </ul>
           <p v-else class="weather-dashboard__empty">검색 결과가 일치하는 도시가 없습니다.</p>
@@ -216,11 +190,11 @@ onMounted(fetchWeatherList)
   gap: 10px;
   margin: 0 0 20px;
   font-size: 20px;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .weather-dashboard__title i {
-  color: var(--aurora-1);
+  color: var(--color-primary-darker);
 }
 
 .weather-dashboard__layout {
@@ -256,12 +230,12 @@ onMounted(fetchWeatherList)
   gap: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-dim);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
 .weather-dashboard__legend-item i {
-  color: var(--aurora-1);
+  color: var(--color-primary-darker);
   font-size: 12px;
 }
 
@@ -288,16 +262,16 @@ onMounted(fetchWeatherList)
 .weather-dashboard__empty {
   margin: 4px 0 0;
   font-size: 14px;
-  color: var(--text-faint);
+  color: var(--color-text-light);
   text-align: center;
 }
 
 .weather-dashboard__error {
   margin: 4px 0 0;
   padding: 10px 16px;
-  border-radius: var(--radius-md);
-  background: var(--error-bg);
-  color: var(--error-text);
+  border-radius: var(--border-radius-medium);
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 14px;
   text-align: center;
 }
@@ -305,9 +279,9 @@ onMounted(fetchWeatherList)
 .weather-dashboard__status {
   margin: 4px 0 0;
   padding: 10px 16px;
-  border-radius: var(--radius-md);
-  background: var(--success-bg);
-  color: var(--success-text);
+  border-radius: var(--border-radius-medium);
+  background: var(--color-success-bg);
+  color: var(--color-success);
   font-size: 14px;
   font-weight: 600;
   text-align: center;

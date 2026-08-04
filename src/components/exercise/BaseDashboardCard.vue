@@ -30,12 +30,12 @@ defineProps({
 
 <style scoped>
 .dashboard-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: var(--color-card-background);
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-large);
   padding: 20px 22px;
   margin-bottom: 18px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .dashboard-card__title-row {
@@ -46,7 +46,7 @@ defineProps({
   gap: 8px 16px;
   margin: 0 0 14px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-color-default);
 }
 
 .dashboard-card__title {
@@ -56,12 +56,12 @@ defineProps({
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text);
 }
 
 .dashboard-card__icon {
   font-size: 16px;
-  color: var(--aurora-1);
+  color: var(--color-primary-darker);
 }
 
 .dashboard-card__title-extra {
