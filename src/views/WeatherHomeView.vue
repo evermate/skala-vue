@@ -71,6 +71,12 @@ function onUpdateStatus(status) {
   statusFilter.value = status
 }
 
+function onSearchEnter() {
+  if (filteredWeatherList.value.length === 1) {
+    selectCity(filteredWeatherList.value[0].id)
+  }
+}
+
 function selectCity(cityId) {
   const city = weatherList.value.find((item) => item.id === cityId)
   if (!city) return
@@ -113,6 +119,7 @@ onMounted(fetchWeatherList)
             @update-query="onUpdateQuery"
             @update-status="onUpdateStatus"
             @update-region="onUpdateRegion"
+            @search-enter="onSearchEnter"
           />
         </BaseDashboardCard>
 
@@ -164,6 +171,7 @@ onMounted(fetchWeatherList)
             <div class="weather-dashboard__map-wrap">
               <WeatherMap
                 :cities="filteredWeatherList"
+                :all-cities="weatherList"
                 :focused-city-id="focusedCityId"
                 :region="region"
                 @select-city="selectCity"

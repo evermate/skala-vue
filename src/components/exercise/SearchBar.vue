@@ -18,7 +18,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update-query', 'update-status', 'update-region'])
+const emit = defineEmits(['update-query', 'update-status', 'update-region', 'search-enter'])
 
 function onSearchInput(e) {
   emit('update-query', e.target.value)
@@ -57,6 +57,7 @@ function onSearchInput(e) {
         placeholder="검색할 도시 이름 입력"
         :value="searchQuery"
         @input="onSearchInput"
+        @keyup.enter="emit('search-enter')"
       />
     </div>
 
