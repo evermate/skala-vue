@@ -2,6 +2,8 @@ import axios from 'axios'
 import { staticMockAdapter } from './staticMockAdapter.js'
 
 // Pages 빌드(정적 호스팅)는 Node 서버가 없어서 브라우저 어댑터로 대체.
+// PROD인데 VITE_API_MODE를 안 정해둔 빌드는 안전하게 static으로 기본값을 잡는다
+// (server 모드로 잘못 배포되면 Pages에서 모든 API 호출이 조용히 실패하기 때문).
 export const isStaticMockMode =
   import.meta.env.VITE_API_MODE === 'static' ||
   (import.meta.env.PROD && import.meta.env.VITE_API_MODE !== 'server')

@@ -25,8 +25,8 @@ function isSameCity(a, b) {
 }
 
 // candidate: { name, lat, lon }. 고정 목록(국내/해외 둘 다) + 이미 추가된 커스텀 도시를
-// 통틀어 검색해서, 실제로 매칭된 도시가 속한 region을 함께 돌려준다 — 후보 자체의
-// country_code 분류와 매칭된 기존 도시의 region이 다를 수 있어(교차 지역 중복) 구분해야 함.
+// 통틀어 검색해서, 실제로 매칭된 도시가 속한 region을 함께 돌려준다. 후보 자체의
+// country_code 분류와 매칭된 기존 도시의 region이 다를 수 있어(교차 지역 중복) 구분해야 한다.
 export function findDuplicateCity(candidate, customCities) {
   const domesticMatch = KOREA_CITIES.find((city) => isSameCity(city, candidate))
   if (domesticMatch) return { ...domesticMatch, region: 'domestic', source: 'fixed' }

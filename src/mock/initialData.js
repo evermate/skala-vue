@@ -1,4 +1,4 @@
-// Node mock-api/data/journalStore.js와 같은 시드 데이터 — 서버 코드는 브라우저 번들에 못 들어가서 따로 유지.
+// Node mock-api/data/journalStore.js와 같은 시드 데이터. 서버 코드는 브라우저 번들에 못 들어가서 따로 유지한다.
 export const initialJournal = [
   {
     id: 1,

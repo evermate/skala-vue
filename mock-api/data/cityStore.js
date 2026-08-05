@@ -8,6 +8,8 @@ export function findCityById(id) {
   return cities.find((city) => city.id === id)
 }
 
+// journalStore와 달리 id를 여기서 매기지 않는다. 클라이언트가 custom_<timestamp> 형태로
+// 미리 만들어 보내므로(customCityStore.js) 그대로 저장한다.
 export function createCity(city) {
   cities.push(city)
   return city

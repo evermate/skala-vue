@@ -16,16 +16,16 @@ const props = defineProps({
 
 const emit = defineEmits(['select-card', 'click-detail', 'delete-city', 'edit-memo'])
 
-// "더움/선선함" 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
+// 더움/선선함 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
 const isWarm = computed(() => props.city.temp >= 25)
 const { unit, unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
-// 판정 자체는 섭씨 25도 기준이지만, 라벨에 보여주는 숫자는 화씨로 바꿔 봐도 옆의
+// 판정 자체는 섭씨 25도 기준이지만, 라벨에 보여주는 숫자는 화씨로 바꿔도 옆의
 // displayTemp(화씨)랑 단위가 안 맞아 보이지 않도록 같은 단위로 변환해서 보여준다.
 const tempThresholdLabel = computed(() => {
   const threshold = convertTemp(25, unit.value)
   return isWarm.value ? `더움 (${threshold}↑)` : `선선함 (${threshold}↓)`
 })
-// 검색으로 추가한 도시만 삭제 가능 — id 생성 규칙(customCityStore.js)이 custom_ 접두어로 고정돼 있음.
+// 검색으로 추가한 도시만 삭제 가능. id 생성 규칙(customCityStore.js)이 custom_ 접두어로 고정돼 있다.
 const isCustom = computed(() => props.city.id.startsWith('custom_'))
 // 3글자 이름(백령도/베이징 등)은 좁은 카드에서 2줄로 감기기 딱 직전인 경우가 많아서,
 // 폰트를 살짝 줄여 한 줄에 들어갈 확률을 높인다.
@@ -131,8 +131,8 @@ const isTripleChar = computed(() => props.city.name.length === 3)
   border-width: 2px;
 }
 
-/* 열차표 절취선 느낌 — 탭 경계(점선)의 위/아래 카드 테두리에 펀치홀을 낸다.
-   실제 종이에 뚫은 구멍처럼, 카드 "바깥쪽"은 아무것도 없고 카드 "안쪽"으로만
+/* 열차표 절취선 느낌으로, 탭 경계(점선)의 위/아래 카드 테두리에 펀치홀을 낸다.
+   실제 종이에 뚫은 구멍처럼, 카드 바깥쪽은 아무것도 없고 카드 안쪽으로만
    반원이 파여 보여야 한다. 그래서 완전한 원이 아니라 반원(카드 경계선에 붙는
    쪽은 각지고, 안쪽으로 파고드는 쪽만 둥근 half-height 박스)으로 만든다.
    탭(button)보다 위에 그려야 해서 z-index를 준다. */
@@ -276,8 +276,8 @@ const isTripleChar = computed(() => props.city.name.length === 3)
 }
 
 /* 카드 오른쪽 가장자리에 세로로 카드 높이를 꽉 채우는 탭. 카드 테두리선(top/right/bottom)에
-   겹쳐서 그 구간의 카드 모서리를 그대로 이어받는다 — 카드 바깥으로 튀어나오는 버튼이 아니라
-   카드 자체의 일부(오른쪽 여백 칸)처럼 핏하게. 본문(header)은 padding-right로 이 폭만큼 비켜난다. */
+   겹쳐서 그 구간의 카드 모서리를 그대로 이어받는다. 카드 바깥으로 튀어나오는 버튼이 아니라
+   카드 자체의 일부(오른쪽 여백 칸)처럼 핏하게 붙인다. 본문(header)은 padding-right로 이 폭만큼 비켜난다. */
 .weather-card__detail-btn {
   position: absolute;
   top: -1px;
