@@ -1,7 +1,7 @@
 import { fetchWithTimeout } from './fetchWithTimeout'
 
 // Open-Meteo Geocoding API — 키 불필요. forecast/air-quality용 api.open-meteo.com과는
-// 다른 호스트라 weatherApi(axios) 대신 fetchWithTimeout으로 직접 호출한다.
+// 다른 호스트라 fetchWithTimeout으로 직접 호출한다.
 const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 
 // 한글 도시명은 행정구역 접미사가 붙어야 정확히 매칭되는 경우가 많다 — 예: "진주"만
@@ -36,7 +36,9 @@ async function fetchRaw(name) {
   const url = `${GEOCODING_URL}?name=${encodeURIComponent(name)}&count=10&language=ko&format=json`
   const response = await fetchWithTimeout(url)
   if (!response.ok) {
-    throw new Error('위치 검색에 실패했습니다.')
+    const error = new Error('위치 검색에 실패했습니다.')
+    error.status = response.status
+    throw error
   }
   const data = await response.json()
   return data.results ?? []

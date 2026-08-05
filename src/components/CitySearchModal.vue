@@ -45,8 +45,11 @@ async function onSearch() {
       // 안 잡히는 경우가 있어서(영문/로마자 표기로는 잡히는 경우가 많음) 안내를 덧붙인다.
       searchError.value = '검색 결과가 없습니다. 영문 표기로도 시도해 보세요 (예: Seoul, Busan).'
     }
-  } catch {
-    searchError.value = '위치 검색에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+  } catch (error) {
+    searchError.value =
+      error.status === 429
+        ? '검색 요청이 너무 많습니다 (429 Too Many Requests). 잠시 후 다시 시도해 주세요.'
+        : '위치 검색에 실패했습니다. 잠시 후 다시 시도해 주세요.'
   } finally {
     isSearching.value = false
   }

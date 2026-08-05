@@ -88,6 +88,11 @@ const filteredWeatherList = computed(() =>
   ),
 )
 
+// 데모 데이터로 폴백된 상태면 그 이유(요청 한도 초과 등)를 카드 우상단에 보여준다.
+const weatherApiNotice = computed(
+  () => combinedWeatherList.value.find((item) => item.mocked)?.mockReason,
+)
+
 // 검색어가 바뀌어서 지금 선택된 상태 칩이 더 이상 후보에 없으면(예: "비" 선택 중
 // "서울"(맑음)을 검색), 칩이 안 보이는데 필터는 걸려 있어 결과가 0개로 보이는
 // 함정을 막기 위해 전체로 되돌린다.
@@ -288,6 +293,12 @@ onMounted(() => {
           icon="fa-solid fa-cloud-sun"
           :title="region === 'domestic' ? '국내 날씨 현황' : '해외 날씨 현황'"
         >
+          <template v-if="weatherApiNotice" #title-extra>
+            <span class="weather-dashboard__api-notice">
+              <i class="fa-solid fa-triangle-exclamation"></i> {{ weatherApiNotice }}
+            </span>
+          </template>
+
           <p v-if="isLoading" class="weather-dashboard__empty">
             <i class="fa-solid fa-spinner fa-spin"></i> 날씨 정보를 불러오는 중입니다...
           </p>
@@ -581,6 +592,19 @@ onMounted(() => {
   border-radius: 999px;
   background: var(--color-success-bg);
   color: var(--color-success);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.weather-dashboard__api-notice {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;

@@ -1,4 +1,4 @@
-// Open-Meteo WMO weathercode -> 한글 상태 / Font Awesome 아이콘 매핑 (OpenWeatherMap 폴백 전용)
+// Open-Meteo WMO weathercode -> 한글 상태 / Font Awesome 아이콘 매핑
 // https://open-meteo.com/en/docs (WMO Weather interpretation codes)
 const WEATHER_CODE_MAP = {
   0: { status: '맑음', icon: 'fa-solid fa-sun' },
