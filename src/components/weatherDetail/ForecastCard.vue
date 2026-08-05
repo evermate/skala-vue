@@ -1,4 +1,6 @@
 <script setup>
+import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
+
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 defineProps({
@@ -27,11 +29,11 @@ function formatForecastDate(dateStr) {
 </script>
 
 <template>
-  <div class="weather-detail__card">
-    <p class="weather-detail__section-title">
-      <i class="fa-solid fa-calendar-days"></i> 5일 예보
-      <span v-if="mocked" class="weather-detail__demo-badge" :title="mockReason">데모</span>
-    </p>
+  <BaseDashboardCard icon="fa-solid fa-calendar-days" title="5일 예보">
+    <template v-if="mocked" #title-badge>
+      <span class="weather-detail__demo-badge" :title="mockReason">데모</span>
+    </template>
+
     <p v-if="isLoading" class="weather-detail__section-empty">불러오는 중...</p>
     <ul v-else-if="forecast.length > 0" class="weather-detail__forecast">
       <li v-for="day in forecast" :key="day.date" class="weather-detail__forecast-day">
@@ -43,33 +45,10 @@ function formatForecastDate(dateStr) {
       </li>
     </ul>
     <p v-else class="weather-detail__section-empty">예보 정보를 불러오지 못했습니다.</p>
-  </div>
+  </BaseDashboardCard>
 </template>
 
 <style scoped>
-.weather-detail__card {
-  background: var(--color-card-background);
-  border: 1px solid var(--border-color-default);
-  border-radius: var(--border-radius-large);
-  padding: 20px 22px;
-  margin-bottom: 18px;
-  box-shadow: var(--shadow-card);
-}
-
-.weather-detail__section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 14px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.weather-detail__section-title i {
-  color: var(--color-primary-darker);
-}
-
 .weather-detail__demo-badge {
   padding: 1px 7px;
   border-radius: 999px;
