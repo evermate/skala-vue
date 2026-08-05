@@ -18,7 +18,13 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update-query', 'update-status', 'update-region', 'search-enter'])
+const emit = defineEmits([
+  'update-query',
+  'update-status',
+  'update-region',
+  'search-enter',
+  'open-city-search',
+])
 
 function onSearchInput(e) {
   emit('update-query', e.target.value)
@@ -84,6 +90,10 @@ function onSearchInput(e) {
         @click="emit('update-status', option)"
       >
         {{ option }}
+      </button>
+
+      <button type="button" class="search-bar__add-city-btn" @click="emit('open-city-search')">
+        찾는 도시가 없나요? <i class="fa-solid fa-plus"></i>
       </button>
     </div>
   </div>
@@ -248,5 +258,25 @@ function onSearchInput(e) {
   background: var(--color-primary-darker);
   border-color: var(--color-primary-darker);
   color: #ffffff;
+}
+
+.search-bar__add-city-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--color-primary-darker);
+  border-radius: 999px;
+  background: var(--color-primary-darker);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.search-bar__add-city-btn:hover {
+  filter: brightness(1.08);
 }
 </style>

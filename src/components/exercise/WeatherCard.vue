@@ -13,11 +13,13 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select-card', 'click-detail'])
+const emit = defineEmits(['select-card', 'click-detail', 'delete-city'])
 
 // "더움/선선함" 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
 const isWarm = computed(() => props.city.temp >= 25)
 const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
+// 검색으로 추가한 도시만 삭제 가능 — id 생성 규칙(customCityStore.js)이 custom_ 접두어로 고정돼 있음.
+const isCustom = computed(() => props.city.id.startsWith('custom_'))
 </script>
 
 <template>
@@ -48,6 +50,16 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
       @click.stop="emit('click-detail', city.id)"
     >
       <i class="fa-solid fa-circle-info"></i>
+    </button>
+
+    <button
+      v-if="isCustom"
+      class="weather-card__delete-btn"
+      title="삭제"
+      aria-label="추가한 도시 삭제"
+      @click.stop="emit('delete-city', city.id)"
+    >
+      <i class="fa-solid fa-trash"></i>
     </button>
   </li>
 </template>
@@ -255,6 +267,34 @@ const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 .weather-card__detail-btn:hover {
   background: var(--color-primary-darker);
   border-color: var(--color-primary-darker);
+  color: #ffffff;
+}
+
+.weather-card__delete-btn {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-color-default);
+  border-radius: 50%;
+  background: var(--color-card-background);
+  color: var(--color-text-light);
+  font-size: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.weather-card__delete-btn:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
   color: #ffffff;
 }
 </style>

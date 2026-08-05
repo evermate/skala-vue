@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { convertTemp } from '@/utils/temperature'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
+import { escapeHtml } from '@/utils/escapeHtml'
 
 const props = defineProps({
   cities: {
@@ -56,7 +57,7 @@ function createWeatherIcon(city, temp) {
     className: 'weather-mini-marker-wrap',
     html: `
       <div class="weather-mini-marker ${isWarm ? 'is-warm' : 'is-cool'} ${isShort ? 'is-short' : ''}">
-        <span class="weather-mini-marker__name">${city.name}</span>
+        <span class="weather-mini-marker__name">${escapeHtml(city.name)}</span>
         <i class="weather-mini-marker__icon fa-solid ${city.icon?.replace('fa-solid ', '') ?? 'fa-cloud'}"></i>
         <span class="weather-mini-marker__temp">${temp}</span>
       </div>
@@ -74,16 +75,24 @@ function getMarkerById(cityId) {
   return markers.get(cityId)
 }
 
+// 선택된 마커가 다른 마커랑 겹칠 때 항상 맨 위로 오도록, 포커스된 마커만 z-index를
+// 확 띄운다(Leaflet 기본은 화면상 y좌표가 클수록 위로 오는 순서라 겹치면 뒤바뀔 수 있음).
 function applyFocusHighlight() {
   markers.forEach((marker, cityId) => {
+    const isFocused = cityId === props.focusedCityId
     const el = marker.getElement()?.querySelector('.weather-mini-marker')
-    el?.classList.toggle('is-focused', cityId === props.focusedCityId)
+    el?.classList.toggle('is-focused', isFocused)
+    marker.setZIndexOffset(isFocused ? 1000 : 0)
   })
 
+  const isCurrentLocationFocused = props.focusedCityId === 'current-location'
   const currentEl = currentLocationMarker
     ?.getElement()
     ?.querySelector('.weather-current-location-marker')
-  currentEl?.classList.toggle('is-focused', props.focusedCityId === 'current-location')
+  currentEl?.classList.toggle('is-focused', isCurrentLocationFocused)
+  // 평소엔 다른 도시 마커보다 뒤에 두지만(아래 showCurrentLocationMarker 참고),
+  // 선택된 상태에서는 그 규칙보다 우선해서 맨 앞으로 올린다.
+  currentLocationMarker?.setZIndexOffset(isCurrentLocationFocused ? 1000 : -1000)
 }
 
 function drawMarkers() {
@@ -148,8 +157,7 @@ function showCurrentLocationMarker(lat, lon, { fly = true } = {}) {
 
   currentLocationMarker?.remove()
   currentLocationMarker = L.marker([lat, lon], {
-    // 다른 도시 마커랑 겹칠 때 항상 뒤로 가도록 z-index를 낮게 고정한다.
-    // (Leaflet 기본값은 화면상 y좌표가 클수록 위로 오는데, 그러면 겹칠 때마다 순서가 뒤바뀐다.)
+    // 초기 z-index는 applyFocusHighlight가 바로 아래서 다시 정하니 임시값일 뿐이다.
     zIndexOffset: -1000,
     icon: L.divIcon({
       className: 'weather-mini-marker-wrap',

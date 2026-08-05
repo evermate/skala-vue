@@ -3,12 +3,14 @@ import { ref, computed, watch, watchEffect, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useDashboardStore } from '@/stores/dashboardStore'
+import { useCustomCityStore } from '@/stores/customCityStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import SearchBar from '@/components/exercise/SearchBar.vue'
 import WeatherCard from '@/components/exercise/WeatherCard.vue'
 import WeatherMap from '@/components/WeatherMap.vue'
 import WeatherEffect from '@/components/WeatherEffect.vue'
 import WeatherThermometer from '@/components/WeatherThermometer.vue'
+import CitySearchModal from '@/components/CitySearchModal.vue'
 import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
@@ -18,6 +20,7 @@ import { withSubjectParticle } from '@/utils/korean'
 
 const router = useRouter()
 const dashboardStore = useDashboardStore()
+const customCityStore = useCustomCityStore()
 
 const {
   region,
@@ -43,6 +46,17 @@ const currentLocationIsWarm = computed(() => (currentLocationCity.value?.temp ??
 
 const activeCities = computed(() => (region.value === 'domestic' ? KOREA_CITIES : WORLD_CITIES))
 
+const isCityModalOpen = ref(false)
+
+// customCityStore는 지역 무관하게 도시를 통째로 들고 있어서, 화면에 쓸 때는 항상 현재
+// region으로 걸러서 씀 — 고정 목록과 똑같은 방식으로 목록/지도에 자연스럽게 편입된다.
+const customCitiesForRegion = computed(() => customCityStore.citiesForRegion(region.value))
+const customWeatherForRegion = computed(() => customCityStore.weatherListForRegion(region.value))
+// 지도 fitToBounds용 — 날씨가 아직 안 온 커스텀 도시도 좌표만 있으면 범위 계산엔 포함.
+const combinedAllCities = computed(() => [...weatherList.value, ...customCitiesForRegion.value])
+// 검색/필터/카드 목록용 — 날씨가 도착한 커스텀 도시만 고정 도시와 동일하게 취급.
+const combinedWeatherList = computed(() => [...weatherList.value, ...customWeatherForRegion.value])
+
 // 콤마로 여러 도시명을 한 번에 검색할 수 있게 한다 ("서울, 부산" -> 서울 또는 부산 매칭).
 // weatherList 자체가 이미 다 불러와 있는 목록(국내 22개/해외 14개)이라 API 재호출 없이
 // 메모리 안에서 필터만 확장하는 거라 추가 비용은 없다.
@@ -56,7 +70,7 @@ const searchTerms = computed(() =>
 // 검색어까지만 반영한 목록. 상태 필터 칩의 선택지를 여기서 뽑아서
 // "지금 검색된 도시들 중에 실제로 존재하는 상태"만 칩으로 보여준다.
 const searchedWeatherList = computed(() =>
-  weatherList.value.filter(
+  combinedWeatherList.value.filter(
     (item) =>
       searchTerms.value.length === 0 ||
       searchTerms.value.some((term) => item.name.includes(term)),
@@ -92,6 +106,10 @@ const cachedCurrentLocation = computed(() =>
 // 상세보기를 다녀오는 정도의 재진입에서는 굳이 다시 안 부르고 캐시를 그대로 쓴다.
 // (10분 TTL — dashboardStore 참고. 백그라운드 자동 새로고침은 안 하고, 재진입 시점에만 체크한다.)
 async function fetchWeatherList({ force = false } = {}) {
+  // customCities는 지역별 캐시가 아니라 자체 TTL을 가지므로, 고정 목록 fresh 여부와
+  // 무관하게 항상 시도한다(내부적으로 이미 fresh하면 알아서 스킵됨).
+  customCityStore.refreshWeather({ force })
+
   if (!force && dashboardStore.isWeatherListFresh(region.value)) return
 
   isLoading.value = true
@@ -132,11 +150,31 @@ function onSearchEnter() {
 }
 
 function selectCity(cityId) {
-  const city = weatherList.value.find((item) => item.id === cityId)
+  const city = combinedWeatherList.value.find((item) => item.id === cityId)
   if (!city) return
   selectedCityInfo.value = `${withSubjectParticle(city.name)} 선택되었습니다.`
   focusedCityId.value = cityId
   selectedCity.value = city
+}
+
+// 삭제 대상이 지금 선택/포커스된 도시면 지도 포커스·온도계·상세보기 버튼이 죽은 참조를
+// 보지 않도록 같이 초기화한다.
+function deleteCustomCity(cityId) {
+  if (selectedCity.value?.id === cityId) {
+    selectedCity.value = null
+    selectedCityInfo.value = ''
+  }
+  if (focusedCityId.value === cityId) {
+    focusedCityId.value = null
+  }
+  customCityStore.removeCity(cityId)
+}
+
+// 추가 직후엔 방금 추가한 도시가 지금 보고 있는 region과 같을 때만 선택 상태로 전환한다.
+function onCityAdded(city) {
+  if (city.region === region.value) {
+    selectCity(city.id)
+  }
 }
 
 function goToDetail(cityId) {
@@ -213,6 +251,7 @@ onMounted(fetchWeatherList)
             @update-status="onUpdateStatus"
             @update-region="onUpdateRegion"
             @search-enter="onSearchEnter"
+            @open-city-search="isCityModalOpen = true"
           />
         </BaseDashboardCard>
 
@@ -234,6 +273,7 @@ onMounted(fetchWeatherList)
               :is-focused="item.id === focusedCityId"
               @select-card="selectCity"
               @click-detail="goToDetail"
+              @delete-city="deleteCustomCity"
             />
           </ul>
           <p v-else class="weather-dashboard__empty">검색 결과가 일치하는 도시가 없습니다.</p>
@@ -253,7 +293,7 @@ onMounted(fetchWeatherList)
             <div class="weather-dashboard__map-wrap">
               <WeatherMap
                 :cities="filteredWeatherList"
-                :all-cities="weatherList"
+                :all-cities="combinedAllCities"
                 :focused-city-id="focusedCityId"
                 :region="region"
                 :current-location="cachedCurrentLocation"
@@ -309,6 +349,14 @@ onMounted(fetchWeatherList)
         </BaseDashboardCard>
       </div>
     </div>
+
+    <CitySearchModal
+      v-if="isCityModalOpen"
+      :region="region"
+      @close="isCityModalOpen = false"
+      @added="onCityAdded"
+      @select-existing="selectCity"
+    />
   </div>
 </template>
 

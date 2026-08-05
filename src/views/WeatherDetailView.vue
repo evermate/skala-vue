@@ -6,11 +6,13 @@ import { WORLD_CITIES } from '@/utils/worldCities'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 import { fetchAirQuality, fetchForecast } from '@/utils/fetchWeatherExtras'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
+import { useCustomCityStore } from '@/stores/customCityStore'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 const route = useRoute()
 const router = useRouter()
+const customCityStore = useCustomCityStore()
 
 const city = ref(null)
 const isDomestic = ref(true)
@@ -100,14 +102,16 @@ function loadCityWeather() {
   }
 
   const foundInKorea = KOREA_CITIES.find((item) => item.id === cityId)
-  const found = foundInKorea ?? WORLD_CITIES.find((item) => item.id === cityId)
+  const foundInWorld = WORLD_CITIES.find((item) => item.id === cityId)
+  const foundCustom = customCityStore.findById(cityId)
+  const found = foundInKorea ?? foundInWorld ?? foundCustom
 
   if (!found) {
     errorMessage.value = '존재하지 않는 도시입니다.'
     return
   }
 
-  isDomestic.value = Boolean(foundInKorea)
+  isDomestic.value = foundCustom ? foundCustom.region === 'domestic' : Boolean(foundInKorea)
   loadWeatherFor(found)
 }
 
