@@ -8,6 +8,7 @@ Vue 3 + Vite로 만든 날씨 대시보드. 국내/해외 도시 날씨 조회�
 
 - 국내 22개 / 해외 14개 고정 도시의 실시간 날씨를 카드와 지도로 보여준다. 상태는 `dashboardStore`(Pinia)에 지역(국내/해외)별로 나눠 저장하고, 10분 TTL 캐시를 둬서 화면을 재진입할 때마다 다시 부르지 않는다.
 - 날씨 데이터는 Open-Meteo API를 직접 호출한다(`utils/fetchWeather.js`). `.env.local`에 `VITE_OPENWEATHER_API_KEY`를 넣으면 로컬 개발 중에만 OpenWeatherMap을 먼저 시도하고 실패하면 Open-Meteo로 넘어간다. 두 공급자를 비교해보려고 남겨둔 로컬 전용 옵션이며, Pages 배포본엔 이 키가 아예 없어서 항상 Open-Meteo만 쓴다.
+- 지도는 [Leaflet](https://leafletjs.com/)에 OpenStreetMap 무료 타일을 얹어서 쓴다(`WeatherMap.vue`). 마커는 Leaflet 기본 핀 대신 도시명·날씨아이콘·기온을 넣은 커스텀 마커로 그리고, 검색/필터/카드 선택과 맞물려 움직인다.
 - 검색어/상태 필터, 도시 클릭 시 지도·온도계 포커스, 현재 위치 날씨(Geolocation) 지원.
 - 상단 단위 토글로 섭씨/화씨를 전환하면 화면 전체(카드, 지도, 상세보기, 온도계)의 온도 표시가 즉시 바뀐다. 선택한 단위는 `configStore`가 `localStorage`에 저장해서 다음 방문에도 유지된다.
 - Open-Meteo/OpenWeatherMap이 둘 다 실패하면(요청 한도 초과 등) 화면이 비지 않도록 도시 위경도 기반으로 그럴듯한 데모 값을 만들어 보여준다. 데모로 대체된 경우 목록 상단에 사유가 뜬다.
@@ -28,10 +29,19 @@ Vue 3 + Vite로 만든 날씨 대시보드. 국내/해외 도시 날씨 조회�
 ### 날씨 일지
 
 - `/journal`에서 다녀온 곳의 날씨를 기록한다. 목록 조회·작성·수정·삭제 전부 Mock API(`/api/journal`)로 처리하는 CRUD. Element Plus 컴포넌트로 화면을 구성했다.
+- 로그인해야 볼 수 있다. 비로그인 상태로 `/journal`에 들어오면 `/login`으로 보내고, `/api/journal` 쪽도 서버에서 토큰 없이 부르면 401을 준다(화면 라우팅만 막는 게 아니라 API 자체도 막음).
+
+### 로그인 · 회원가입 (Mock JWT)
+
+- `/login`, `/signup` 화면 — Element Plus `el-form`(검증 규칙 포함)로 만들었다. 회원가입은 이메일/이름/비밀번호/비밀번호 확인/약관 동의(`el-switch`)를 받는다.
+- 로그인 성공 시 Mock API가 JWT(`header.payload.signature`, HMAC-SHA256)를 발급한다.
+- 토큰은 `localStorage`에 저장하고, 이후 모든 Mock API 요청에 `Authorization: Bearer ...`로 자동 첨부한다(`mockHttp.js` 인터셉터).
+- GitHub Pages(서버 없음) 배포본에서도 로그인이 똑같이 동작해야 해서, 브라우저 쪽(`staticMockAdapter.js`)은 Node의 `crypto.createHmac` 대신 브라우저 표준 API인 Web Crypto(`crypto.subtle`)로 같은 HMAC-SHA256 서명/검증을 다시 구현했다.
+- 데모 계정: `demo@skala.com` / `demo1234`.
 
 ## Mock API와 실제 API 구분
 
-커스텀 도시와 날씨 일지, 이 두 기능만 Mock API를 쓴다(날씨 조회는 항상 실제 API). 로컬에서는 Node 서버(`server.js`)가 메모리에 데이터를 들고 있고 재시작하면 초기화된다. GitHub Pages는 서버를 띄울 수 없어서, `src/api/staticMockAdapter.js`가 같은 API 경로를 브라우저 안에서 그대로 흉내 내고 `localStorage`에 저장한다. 어느 쪽을 쓸지는 `VITE_API_MODE` 환경변수로 정하고(`src/api/mockHttp.js`), 그 외 컴포넌트나 API 모듈 코드는 두 환경에서 동일하다.
+커스텀 도시, 날씨 일지, 로그인/회원가입까지 세 기능이 Mock API를 쓴다(날씨 조회는 실제 API). 로컬에서는 Node 서버(`server.js`)가 메모리에 데이터(도시/일지/유저)를 들고 있고 재시작하면 전부 초기화된다. GitHub Pages는 서버를 띄울 수 없어서, `src/api/staticMockAdapter.js`가 같은 API 경로(회원가입/로그인의 JWT 발급·검증 포함)를 브라우저 안에서 그대로 흉내 내고 `localStorage`에 저장한다. 어느 쪽을 쓸지는 `VITE_API_MODE` 환경변수로 정하고(`src/api/mockHttp.js`), 그 외 컴포넌트나 API 모듈 코드는 두 환경에서 동일하다.
 
 화면 상단 배너로 지금 로컬 Node 서버/브라우저 어댑터 중 어디에 붙어있는지 확인할 수 있다.
 
@@ -80,13 +90,13 @@ Pages 빌드 환경(GitHub Actions)엔 `.env.local`이 없고 레포 Secrets에�
 
 ## npm 명령
 
-| 명령                   | 역할                                   |
-| ---------------------- | --------------------------------------- |
-| `npm run dev`          | Vite 서버만 실행                        |
-| `npm run api`          | 로컬 Node Mock API만 실행               |
-| `npm run dev:all`      | Vue + Mock API 동시 실행                |
-| `npm run build`        | 기본 프로덕션 빌드                      |
-| `npm run build:pages`  | 브라우저 Mock API를 포함한 Pages 빌드   |
-| `npm run preview`      | 최근 빌드 결과 미리보기                 |
-| `npm run lint`         | oxlint → eslint 순서로 실행             |
-| `npm run format`       | prettier로 `src/` 포맷팅                |
+| 명령                  | 역할                                  |
+| --------------------- | ------------------------------------- |
+| `npm run dev`         | Vite 서버만 실행                      |
+| `npm run api`         | 로컬 Node Mock API만 실행             |
+| `npm run dev:all`     | Vue + Mock API 동시 실행              |
+| `npm run build`       | 기본 프로덕션 빌드                    |
+| `npm run build:pages` | 브라우저 Mock API를 포함한 Pages 빌드 |
+| `npm run preview`     | 최근 빌드 결과 미리보기               |
+| `npm run lint`        | oxlint → eslint 순서로 실행           |
+| `npm run format`      | prettier로 `src/` 포맷팅              |
