@@ -18,6 +18,7 @@ const props = defineProps({
 })
 
 const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
+const { displayTemp: displayFeelsLike } = useDisplayTemp(() => props.city.feelsLike)
 
 const regionLabel = computed(() => (props.isDomestic ? '대한민국 ' : ''))
 </script>
@@ -25,7 +26,7 @@ const regionLabel = computed(() => (props.isDomestic ? '대한민국 ' : ''))
 <template>
   <div class="weather-detail__card">
     <p class="weather-detail__place">
-      <i class="fa-solid fa-location-dot"></i> 지정 지역: {{ regionLabel }}{{ city.name }}
+      <i class="fa-solid fa-location-dot"></i> {{ regionLabel }}{{ city.name }}
     </p>
     <p v-if="customMemo" class="weather-detail__memo">
       <i class="fa-solid fa-note-sticky"></i> {{ customMemo }}
@@ -34,6 +35,10 @@ const regionLabel = computed(() => (props.isDomestic ? '대한민국 ' : ''))
       <div class="weather-detail__row">
         <dt><i class="fa-solid fa-temperature-half"></i> 실시간 기온</dt>
         <dd>{{ displayTemp }}{{ unitSymbol }}</dd>
+      </div>
+      <div class="weather-detail__row">
+        <dt><i class="fa-solid fa-temperature-three-quarters"></i> 체감 온도</dt>
+        <dd>{{ displayFeelsLike }}{{ unitSymbol }}</dd>
       </div>
       <div class="weather-detail__row">
         <dt><i class="fa-solid" :class="city.icon"></i> 기상 현황</dt>

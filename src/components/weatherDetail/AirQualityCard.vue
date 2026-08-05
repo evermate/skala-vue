@@ -1,5 +1,7 @@
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   airQuality: {
     type: Object,
     default: null,
@@ -9,6 +11,15 @@ defineProps({
     default: false,
   },
 })
+
+const LEVEL_CLASS = {
+  좋음: 'is-good',
+  보통: 'is-moderate',
+  나쁨: 'is-bad',
+  '매우 나쁨': 'is-severe',
+}
+
+const levelClass = computed(() => LEVEL_CLASS[props.airQuality?.level] ?? '')
 </script>
 
 <template>
@@ -26,7 +37,7 @@ defineProps({
     <dl v-else-if="airQuality" class="weather-detail__list">
       <div class="weather-detail__row">
         <dt>등급</dt>
-        <dd>{{ airQuality.level }}</dd>
+        <dd class="weather-detail__aqi-level" :class="levelClass">{{ airQuality.level }}</dd>
       </div>
       <div class="weather-detail__row">
         <dt>미세먼지 (PM10)</dt>
@@ -111,5 +122,21 @@ defineProps({
   margin: 0;
   font-weight: 700;
   color: var(--color-text);
+}
+
+.weather-detail__aqi-level.is-good {
+  color: var(--color-success);
+}
+
+.weather-detail__aqi-level.is-moderate {
+  color: var(--color-info);
+}
+
+.weather-detail__aqi-level.is-bad {
+  color: var(--color-warning);
+}
+
+.weather-detail__aqi-level.is-severe {
+  color: var(--color-error);
 }
 </style>
