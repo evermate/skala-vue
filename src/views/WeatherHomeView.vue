@@ -73,8 +73,7 @@ const searchTerms = computed(() =>
 const searchedWeatherList = computed(() =>
   combinedWeatherList.value.filter(
     (item) =>
-      searchTerms.value.length === 0 ||
-      searchTerms.value.some((term) => item.name.includes(term)),
+      searchTerms.value.length === 0 || searchTerms.value.some((term) => item.name.includes(term)),
   ),
 )
 
@@ -311,7 +310,9 @@ onBeforeUnmount(() => {
           :title="region === 'domestic' ? '국내 날씨 현황' : '해외 날씨 현황'"
         >
           <template
-            v-if="!isLoading && !errorMessage && !weatherApiNotice && combinedWeatherList.length > 0"
+            v-if="
+              !isLoading && !errorMessage && !weatherApiNotice && combinedWeatherList.length > 0
+            "
             #title-badge
           >
             <span class="weather-dashboard__api-live" title="실시간 API 연동 중">

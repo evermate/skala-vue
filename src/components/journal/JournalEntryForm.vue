@@ -26,13 +26,7 @@ defineProps({
   },
 })
 
-defineEmits([
-  'update:cityName',
-  'update:weatherTag',
-  'update:content',
-  'submit',
-  'cancel',
-])
+defineEmits(['update:cityName', 'update:weatherTag', 'update:content', 'submit', 'cancel'])
 </script>
 
 <template>

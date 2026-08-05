@@ -6,6 +6,7 @@ import { WORLD_CITIES } from '@/utils/worldCities'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 import { fetchAirQuality, fetchForecast } from '@/utils/fetchWeatherExtras'
 import { useCustomCityStore } from '@/stores/customCityStore'
+import WeatherEffect from '@/components/WeatherEffect.vue'
 import MainWeatherCard from '@/components/weatherDetail/MainWeatherCard.vue'
 import AirQualityCard from '@/components/weatherDetail/AirQualityCard.vue'
 import ForecastCard from '@/components/weatherDetail/ForecastCard.vue'
@@ -127,13 +128,13 @@ onMounted(loadCityWeather)
 
 <template>
   <div class="weather-detail">
+    <WeatherEffect :status="city?.status ?? null" />
+
     <div class="weather-detail__header">
       <button class="weather-detail__back-btn" @click="goHome">
         <i class="fa-solid fa-arrow-left"></i> 뒤로가기
       </button>
-      <h2 class="weather-detail__title">
-        <i class="fa-solid fa-location-dot"></i> 상세정보
-      </h2>
+      <h2 class="weather-detail__title"><i class="fa-solid fa-location-dot"></i> 상세정보</h2>
       <span
         v-if="city"
         class="weather-detail__api-status"
