@@ -70,20 +70,37 @@ async function fetchFromOpenMeteo(cities) {
   })
 }
 
-// 두 공급자 다 실패해도(네트워크 차단, 요청 한도 초과 등) 시연이 끊기지 않게 쓰는 고정 데모 데이터.
-// mockReason은 화면 상단에 "왜 데모 데이터인지" 보여주는 용도.
+const DEMO_PRESETS = [
+  { status: '맑음', icon: 'fa-solid fa-sun', tempOffset: 3 },
+  { status: '구름조금', icon: 'fa-solid fa-cloud-sun', tempOffset: 1 },
+  { status: '흐림', icon: 'fa-solid fa-cloud', tempOffset: -2 },
+  { status: '비', icon: 'fa-solid fa-cloud-showers-heavy', tempOffset: -4 },
+]
+
+function hashString(value) {
+  let hash = 0
+  for (let i = 0; i < value.length; i += 1) hash = (hash * 31 + value.charCodeAt(i)) % 997
+  return hash
+}
+
+// meteo 실패해도(네트워크 차단, 요청 한도 초과 등) 시연이 끊기지 않게 쓰는 데모 데이터.
+// 모든 도시에 그럴듯하게 흩어지게 한다. mockReason은 화면에 폴백 사유를 보여주는 용도.
 function createFallbackWeather(city, mockReason) {
+  const preset = DEMO_PRESETS[hashString(city.id) % DEMO_PRESETS.length]
+  const baseTemp = 25 + (36 - Math.abs(city.lat ?? 36)) * 0.3
+  const temp = Math.round(Math.min(38, Math.max(-5, baseTemp + preset.tempOffset)))
+
   return {
     id: city.id,
     name: city.name,
     lat: city.lat,
     lon: city.lon,
-    temp: 20,
-    feelsLike: 19,
-    humidity: 55,
-    windSpeed: 2.1,
-    status: '맑음',
-    icon: 'fa-solid fa-sun',
+    temp,
+    feelsLike: temp - 1,
+    humidity: 45 + (hashString(city.name) % 30),
+    windSpeed: Math.round((1 + (hashString(`${city.id}${city.name}`) % 40) / 10) * 10) / 10,
+    status: preset.status,
+    icon: preset.icon,
     mocked: true,
     mockReason,
   }
