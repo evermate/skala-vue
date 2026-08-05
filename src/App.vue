@@ -15,10 +15,6 @@ import UnitToggler from './components/UnitToggler.vue'
           <i class="fa-solid fa-book"></i>
           <span class="app-nav__link-text">날씨 일지</span>
         </RouterLink>
-        <RouterLink to="/ladder" class="app-nav__link">
-          <i class="fa-solid fa-shuffle"></i>
-          <span class="app-nav__link-text">사다리타기</span>
-        </RouterLink>
         <RouterLink to="/about" class="app-nav__link">
           <i class="fa-solid fa-circle-info"></i>
           <span class="app-nav__link-text">서비스 소개</span>
