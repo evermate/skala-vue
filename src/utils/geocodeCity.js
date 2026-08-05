@@ -11,10 +11,8 @@ const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 const KOREAN_ADMIN_SUFFIXES = ['시', '군', '구', '특별시', '광역시', '특별자치시']
 const HANGUL_RE = /[가-힣]/
 
-// GeoNames feature_code 기준. PPLC(수도)/PPLA~PPLA5(각급 행정구역 소재지)는 행정적으로
-// 유의미한 도시/읍인데, population이 없는 케이스(예: 여수는 PPLA2인데도 population이 비어
-// 있음)가 있어서 population 유무만으론 못 거르고 이 코드도 같이 봐야 동명이지만 다른 동네를
-// 걸러낼 수 있다.
+// GeoNames feature_code. PPLC/PPLA~PPLA5는 행정구역 소재지인데 population 없는
+// 경우 있음(여수 등) — population만으론 못 거름, 이 코드도 같이 봐야 함.
 const ADMIN_FEATURE_CODES = new Set(['PPLC', 'PPLA', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLA5'])
 
 function isSignificantPlace(item) {

@@ -27,8 +27,7 @@ const tempThresholdLabel = computed(() => {
 })
 // 검색으로 추가한 도시만 삭제 가능. id 생성 규칙(customCityStore.js)이 custom_ 접두어로 고정돼 있다.
 const isCustom = computed(() => props.city.id.startsWith('custom_'))
-// 3글자 이름(백령도/베이징 등)은 좁은 카드에서 2줄로 감기기 딱 직전인 경우가 많아서,
-// 폰트를 살짝 줄여 한 줄에 들어갈 확률을 높인다.
+// 3글자 이름(백령도 등)은 좁은 카드에서 잘 감겨서 폰트 살짝 줄임.
 const isTripleChar = computed(() => props.city.name.length === 3)
 </script>
 

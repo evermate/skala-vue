@@ -115,10 +115,8 @@ async function fetchWeatherList({ force = false } = {}) {
   // 무관하게 항상 시도한다(내부적으로 이미 fresh하면 알아서 스킵됨).
   customCityStore.refreshWeather({ force })
 
-  // 이 요청이 어느 지역을 위한 것인지 시작 시점에 고정해둔다. region.value를 나중에
-  // (await 이후) 다시 읽으면, 응답이 오기 전에 사용자가 지역을 또 바꿨을 때 늦게 도착한
-  // 응답이 그 시점의 region.value 자리에 잘못 저장돼서 국내 목록/지도가 해외 데이터로
-  // 오염되는(또는 반대) 레이스 컨디션이 생긴다.
+  // region을 시작 시점에 고정. await 후 다시 읽으면 그 사이 지역 전환 시
+  // 늦게 온 응답이 엉뚱한 지역에 저장되는 레이스 컨디션 생김.
   const targetRegion = region.value
   const isStillCurrent = () => region.value === targetRegion
 

@@ -75,8 +75,7 @@ function getMarkerById(cityId) {
   return markers.get(cityId)
 }
 
-// 선택된 마커가 다른 마커랑 겹칠 때 항상 맨 위로 오도록, 포커스된 마커만 z-index를
-// 확 띄운다(Leaflet 기본은 화면상 y좌표가 클수록 위로 오는 순서라 겹치면 뒤바뀔 수 있음).
+// 포커스 마커만 z-index 확 띄움. Leaflet 기본은 y좌표 순서라 겹치면 밀릴 수 있음.
 function applyFocusHighlight() {
   markers.forEach((marker, cityId) => {
     const isFocused = cityId === props.focusedCityId

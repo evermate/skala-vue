@@ -1,13 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-// 상세보기(WeatherDetailView)를 다녀와도 대시보드 상태가 유지되도록
-// WeatherHomeView 컴포넌트 바깥(Pinia)에 둔다. 컴포넌트는 라우트 이동마다
-// 마운트/언마운트되지만 스토어는 앱이 떠 있는 동안 그대로 남는다.
-//
-// 캐싱 정책: 날씨는 API 자체가 10분 안팎으로만 갱신되고(OpenWeatherMap 무료 티어 기준),
-// 백그라운드 타이머로 몰래 새로고침하면 오히려 어색하다. 그래서 재진입 시점에만
-// 마지막 요청 후 TTL이 지났는지 체크하고, 안 지났으면 캐시를 그대로 쓴다.
+// 라우트 이동해도 상태 유지되게 컴포넌트 밖(Pinia)에 둠.
+// TTL 10분, 재진입 시에만 체크. 백그라운드 자동갱신 없음.
 const CACHE_TTL_MS = 10 * 60 * 1000
 
 export const useDashboardStore = defineStore('dashboard', () => {
