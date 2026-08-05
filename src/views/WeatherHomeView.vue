@@ -110,18 +110,36 @@ async function fetchWeatherList({ force = false } = {}) {
   // 무관하게 항상 시도한다(내부적으로 이미 fresh하면 알아서 스킵됨).
   customCityStore.refreshWeather({ force })
 
-  if (!force && dashboardStore.isWeatherListFresh(region.value)) return
+  // 이 요청이 어느 지역을 위한 것인지 시작 시점에 고정해둔다. region.value를 나중에
+  // (await 이후) 다시 읽으면, 응답이 오기 전에 사용자가 지역을 또 바꿨을 때 늦게 도착한
+  // 응답이 "그 시점의" region.value 자리에 잘못 저장돼서 국내 목록/지도가 해외 데이터로
+  // 오염되는(또는 반대) 레이스 컨디션이 생긴다.
+  const targetRegion = region.value
+  const isStillCurrent = () => region.value === targetRegion
 
-  isLoading.value = true
-  errorMessage.value = ''
+  if (!force && dashboardStore.isWeatherListFresh(targetRegion)) {
+    // 캐시 히트라 여기서 끝나는데, 직전에 다른(이제는 버려진) 지역 요청이 남겨둔
+    // isLoading=true가 안 지워진 채 남아있을 수 있어(그 요청은 region이 바뀌어서
+    // isStillCurrent()가 false가 되고 자기 finally에서 못 끔) — 여기서 확실히 정리한다.
+    if (isStillCurrent()) {
+      isLoading.value = false
+      errorMessage.value = ''
+    }
+    return
+  }
+
+  if (isStillCurrent()) {
+    isLoading.value = true
+    errorMessage.value = ''
+  }
 
   try {
     const result = await fetchWeatherForCities(activeCities.value)
-    dashboardStore.setWeatherList(result, region.value)
+    dashboardStore.setWeatherList(result, targetRegion)
   } catch (error) {
-    errorMessage.value = getWeatherErrorMessage(error)
+    if (isStillCurrent()) errorMessage.value = getWeatherErrorMessage(error)
   } finally {
-    isLoading.value = false
+    if (isStillCurrent()) isLoading.value = false
   }
 }
 
