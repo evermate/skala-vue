@@ -18,6 +18,18 @@ export const mockHttp = axios.create({
   ...(isStaticMockMode ? { adapter: staticMockAdapter } : {}),
 })
 
+export const accessTokenKey = 'skala-vue-access-token'
+
+// 저장된 토큰이 있으면 모든 요청에 Authorization 헤더를 자동으로 붙인다. 로컬 Node
+// 서버/브라우저 정적 어댑터 둘 다 이 인스턴스 하나를 거치므로 여기 한 곳만 고치면 된다.
+mockHttp.interceptors.request.use((config) => {
+  const accessToken = localStorage.getItem(accessTokenKey)
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`
+  }
+  return config
+})
+
 mockHttp.interceptors.response.use(
   (response) => response,
   (error) => {

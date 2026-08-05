@@ -5,6 +5,7 @@ import {
   listJournal,
   updateJournal,
 } from '../data/journalStore.js'
+import { authenticateRequest } from './authRoutes.js'
 import { createHttpError, readJsonBody, sendJson } from '../utils/httpUtils.js'
 
 const weatherTags = ['맑음', '흐림', '비', '눈', '기타']
@@ -32,6 +33,12 @@ function normalize(body) {
 
 export async function handleJournalRoutes(request, response, url) {
   const itemMatch = url.pathname.match(/^\/api\/journal\/(\d+)$/)
+  const isJournalPath = url.pathname === '/api/journal' || Boolean(itemMatch)
+
+  // 날씨 일지 CRUD는 로그인해야 쓸 수 있다(조회 포함). 다른 라우트(city 등)는 안 건드림.
+  if (isJournalPath) {
+    authenticateRequest(request)
+  }
 
   if (request.method === 'GET' && url.pathname === '/api/journal') {
     sendJson(response, 200, listJournal())

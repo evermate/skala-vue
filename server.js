@@ -2,6 +2,8 @@ import http from 'node:http'
 
 import { resetCities, listCities } from './mock-api/data/cityStore.js'
 import { resetJournal, listJournal } from './mock-api/data/journalStore.js'
+import { resetUsers } from './mock-api/data/userStore.js'
+import { handleAuthRoutes } from './mock-api/routes/authRoutes.js'
 import { handleCityRoutes } from './mock-api/routes/cityRoutes.js'
 import { handleJournalRoutes } from './mock-api/routes/journalRoutes.js'
 import { sendError, sendJson } from './mock-api/utils/httpUtils.js'
@@ -30,10 +32,12 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/api/reset') {
       resetCities()
       resetJournal()
+      resetUsers()
       sendJson(response, 200, { message: 'Mock 데이터가 초기화되었습니다.' })
       return
     }
 
+    if (await handleAuthRoutes(request, response, url)) return
     if (await handleCityRoutes(request, response, url)) return
     if (await handleJournalRoutes(request, response, url)) return
 
