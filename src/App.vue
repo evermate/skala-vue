@@ -1,7 +1,16 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/authStore'
 import UnitToggler from './components/UnitToggler.vue'
 import ThemeToggler from './components/ThemeToggler.vue'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+function logout() {
+  authStore.logout()
+  router.push('/')
+}
 </script>
 
 <template>
@@ -24,6 +33,22 @@ import ThemeToggler from './components/ThemeToggler.vue'
       <div class="app-nav__actions">
         <ThemeToggler />
         <UnitToggler />
+        <div v-if="authStore.isLoggedIn" class="app-nav__user">
+          <span class="app-nav__user-name">{{ authStore.user.name }}님</span>
+          <button
+            type="button"
+            class="app-nav__logout-btn"
+            title="로그아웃"
+            aria-label="로그아웃"
+            @click="logout"
+          >
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+        <RouterLink v-else to="/login" class="app-nav__link">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span class="app-nav__link-text">로그인</span>
+        </RouterLink>
       </div>
     </div>
   </header>
@@ -68,6 +93,45 @@ import ThemeToggler from './components/ThemeToggler.vue'
   flex-shrink: 0;
 }
 
+.app-nav__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.app-nav__user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.app-nav__logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-color-default);
+  border-radius: var(--border-radius-medium);
+  background: var(--color-card-background);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.app-nav__logout-btn:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: #ffffff;
+}
+
 .app-nav__link {
   display: flex;
   align-items: center;
@@ -108,6 +172,10 @@ import ThemeToggler from './components/ThemeToggler.vue'
   }
 
   .app-nav__link-text {
+    display: none;
+  }
+
+  .app-nav__user-name {
     display: none;
   }
 }
