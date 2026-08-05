@@ -24,7 +24,7 @@ function validate(body, partial = false) {
 
 function normalize(body) {
   const normalized = {}
-  for (const field of ['cityName', 'weatherTag', 'content', 'author']) {
+  for (const field of ['cityName', 'weatherTag', 'content']) {
     if (Object.hasOwn(body, field)) normalized[field] = String(body[field]).trim()
   }
   return normalized
@@ -43,7 +43,7 @@ export async function handleJournalRoutes(request, response, url) {
     const error = validate(body)
     if (error) throw createHttpError(400, error)
 
-    const entry = createJournal({ ...normalize(body), author: body.author?.trim() || '익명' })
+    const entry = createJournal(normalize(body))
     sendJson(response, 201, entry)
     return true
   }

@@ -165,7 +165,6 @@ function handleJournal(config, method, pathname) {
       cityName: body.cityName.trim(),
       weatherTag: body.weatherTag,
       content: body.content.trim(),
-      author: body.author?.trim() || '익명',
       createdAt: now,
       updatedAt: now,
     }
@@ -181,7 +180,7 @@ function handleJournal(config, method, pathname) {
     const error = validateJournal(body, true)
     if (error) return reject(config, 400, error)
 
-    for (const field of ['cityName', 'weatherTag', 'content', 'author']) {
+    for (const field of ['cityName', 'weatherTag', 'content']) {
       if (Object.hasOwn(body, field)) entry[field] = String(body[field]).trim()
     }
     entry.updatedAt = new Date().toISOString()

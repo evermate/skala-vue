@@ -1,26 +1,36 @@
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { journalApi } from '@/api/journalApi'
-import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
 import MockApiStatusBanner from '@/components/MockApiStatusBanner.vue'
 
 const weatherTags = ['맑음', '흐림', '비', '눈', '기타']
+const tagColor = { 맑음: '#e6a23c', 흐림: '#909399', 비: '#409eff', 눈: '#79bbff', 기타: '#c0c4cc' }
 
 const entries = ref([])
 const isLoading = ref(false)
-const errorMessage = ref('')
+const activeTag = ref('전체')
 const editingId = ref(null)
+const errorMessage = ref('')
 
-const emptyForm = () => ({ cityName: '', weatherTag: '맑음', content: '', author: '' })
+const emptyForm = () => ({ cityName: '', weatherTag: '맑음', content: '' })
 const form = reactive(emptyForm())
+
+const visibleEntries = computed(() => {
+  if (activeTag.value === '전체') return entries.value
+  return entries.value.filter((entry) => entry.weatherTag === activeTag.value)
+})
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
 
 async function load() {
   isLoading.value = true
-  errorMessage.value = ''
   try {
     entries.value = await journalApi.getAll()
   } catch (error) {
-    errorMessage.value = error.message
+    ElMessage.error(error.message)
   } finally {
     isLoading.value = false
   }
@@ -29,6 +39,7 @@ async function load() {
 function resetForm() {
   editingId.value = null
   Object.assign(form, emptyForm())
+  errorMessage.value = ''
 }
 
 function startEdit(entry) {
@@ -37,17 +48,23 @@ function startEdit(entry) {
     cityName: entry.cityName,
     weatherTag: entry.weatherTag,
     content: entry.content,
-    author: entry.author,
   })
+  errorMessage.value = ''
 }
 
 async function submit() {
-  if (!form.cityName.trim() || !form.content.trim()) return
+  if (!form.cityName.trim() || !form.content.trim()) {
+    errorMessage.value = '관측 도시와 내용은 필수입니다.'
+    return
+  }
+
   try {
     if (editingId.value) {
       await journalApi.update(editingId.value, { ...form })
+      ElMessage.success('일지가 수정되었습니다.')
     } else {
       await journalApi.create({ ...form })
+      ElMessage.success('일지가 기록되었습니다.')
     }
     resetForm()
     await load()
@@ -56,12 +73,24 @@ async function submit() {
   }
 }
 
-async function remove(id) {
+async function remove(entry) {
   try {
-    await journalApi.remove(id)
+    await ElMessageBox.confirm(`"${entry.cityName}" 기록을 삭제할까요?`, '삭제 확인', {
+      confirmButtonText: '삭제',
+      cancelButtonText: '취소',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+
+  try {
+    await journalApi.remove(entry.id)
+    if (editingId.value === entry.id) resetForm()
+    ElMessage.success('삭제되었습니다.')
     await load()
   } catch (error) {
-    errorMessage.value = error.message
+    ElMessage.error(error.message)
   }
 }
 
@@ -70,45 +99,73 @@ onMounted(load)
 
 <template>
   <div class="journal-view">
-    <BaseDashboardCard icon="fa-solid fa-book" title="날씨 일지">
+    <header class="journal-intro">
+      <h2>날씨 일지</h2>
       <MockApiStatusBanner />
+      <p class="journal-intro__note">내가 다녀온 곳의 날씨를 기록해두는 개인 메모장.</p>
+    </header>
 
-      <form class="journal-form" @submit.prevent="submit">
-        <div class="journal-form__row">
-          <input v-model="form.cityName" type="text" placeholder="관측 도시" required />
-          <select v-model="form.weatherTag">
-            <option v-for="tag in weatherTags" :key="tag" :value="tag">{{ tag }}</option>
-          </select>
+    <el-card shadow="never" class="journal-form-card">
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        show-icon
+        :closable="false"
+        class="form-alert"
+      />
+      <div class="journal-form">
+        <el-input v-model="form.cityName" placeholder="다녀온 곳" class="field-city" />
+        <el-select v-model="form.weatherTag" class="field-tag">
+          <el-option v-for="tag in weatherTags" :key="tag" :label="tag" :value="tag" />
+        </el-select>
+        <el-input
+          v-model="form.content"
+          type="textarea"
+          :rows="2"
+          placeholder="오늘 날씨는 어땠나요?"
+          class="field-content"
+        />
+        <div class="journal-form__actions">
+          <el-button v-if="editingId" @click="resetForm">취소</el-button>
+          <el-button type="primary" @click="submit">{{ editingId ? '수정 완료' : '기록하기' }}</el-button>
         </div>
-        <textarea v-model="form.content" placeholder="오늘 날씨는 어땠나요?" rows="3" required />
-        <div class="journal-form__row">
-          <input v-model="form.author" type="text" placeholder="작성자 (선택)" />
-          <button type="submit">{{ editingId ? '수정' : '등록' }}</button>
-          <button v-if="editingId" type="button" class="journal-form__cancel" @click="resetForm">
-            취소
-          </button>
-        </div>
-      </form>
+      </div>
+    </el-card>
 
-      <p v-if="isLoading" class="journal-empty">불러오는 중...</p>
-      <p v-else-if="errorMessage" class="journal-error">{{ errorMessage }}</p>
-      <p v-else-if="entries.length === 0" class="journal-empty">아직 일지가 없습니다.</p>
+    <div class="journal-filter">
+      <el-check-tag
+        v-for="tag in ['전체', ...weatherTags]"
+        :key="tag"
+        :checked="activeTag === tag"
+        @change="activeTag = tag"
+      >
+        {{ tag }}
+      </el-check-tag>
+    </div>
 
-      <ul v-else class="journal-list">
-        <li v-for="entry in entries" :key="entry.id" class="journal-item">
-          <div class="journal-item__head">
+    <el-empty v-if="!isLoading && visibleEntries.length === 0" description="기록이 없습니다." />
+
+    <el-timeline v-else v-loading="isLoading">
+      <el-timeline-item
+        v-for="entry in visibleEntries"
+        :key="entry.id"
+        :color="tagColor[entry.weatherTag]"
+        :timestamp="formatDate(entry.createdAt)"
+      >
+        <div class="entry" :class="{ 'is-editing': editingId === entry.id }">
+          <div class="entry__head">
             <strong>{{ entry.cityName }}</strong>
-            <span class="journal-item__tag">{{ entry.weatherTag }}</span>
-            <span class="journal-item__author">{{ entry.author }}</span>
+            <span class="entry__tag" :style="{ color: tagColor[entry.weatherTag] }">{{ entry.weatherTag }}</span>
           </div>
-          <p class="journal-item__content">{{ entry.content }}</p>
-          <div class="journal-item__actions">
-            <button type="button" @click="startEdit(entry)">수정</button>
-            <button type="button" @click="remove(entry.id)">삭제</button>
+          <p class="entry__content">{{ entry.content }}</p>
+          <div class="entry__actions">
+            <el-button size="small" text @click="startEdit(entry)">수정</el-button>
+            <el-button size="small" text type="danger" @click="remove(entry)">삭제</el-button>
           </div>
-        </li>
-      </ul>
-    </BaseDashboardCard>
+        </div>
+      </el-timeline-item>
+    </el-timeline>
   </div>
 </template>
 
@@ -119,115 +176,90 @@ onMounted(load)
   padding: 0 16px;
 }
 
-.journal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.journal-intro {
   margin-bottom: 16px;
 }
 
-.journal-form__row {
+.journal-intro h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--color-text);
+}
+
+.journal-intro__note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-light);
+}
+
+.journal-form-card {
+  margin-bottom: 16px;
+}
+
+.journal-form {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px;
+}
+
+.field-content {
+  grid-column: 1 / -1;
+}
+
+.journal-form__actions {
+  grid-column: 1 / -1;
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
 }
 
-.journal-form input,
-.journal-form select,
-.journal-form textarea {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid var(--border-color-default);
-  border-radius: var(--border-radius-medium);
-  background: var(--color-card-background);
-  color: var(--color-text);
-  font-size: 13px;
-  font-family: inherit;
+.form-alert {
+  margin-bottom: 12px;
 }
 
-.journal-form button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: var(--border-radius-medium);
-  background: var(--color-primary-darker);
-  color: #ffffff;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.journal-form__cancel {
-  background: var(--color-card-background);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--border-color-default) !important;
-}
-
-.journal-empty,
-.journal-error {
-  font-size: 13px;
-  color: var(--color-text-light);
-  text-align: center;
-}
-
-.journal-error {
-  color: var(--color-error);
-}
-
-.journal-list {
+.journal-filter {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
 }
 
-.journal-item {
-  padding: 12px 14px;
+.entry {
+  padding: 10px 14px;
   border: 1px solid var(--border-color-default);
   border-radius: var(--border-radius-medium);
   background: var(--color-card-background);
 }
 
-.journal-item__head {
+.entry.is-editing {
+  border-color: var(--color-primary-darker);
+}
+
+.entry__head {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
   font-size: 13px;
 }
 
-.journal-item__tag {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--color-primary-opacity-10);
-  font-size: 11px;
+.entry__tag {
   font-weight: 700;
 }
 
-.journal-item__author {
-  margin-left: auto;
-  color: var(--color-text-light);
-  font-size: 12px;
-}
-
-.journal-item__content {
-  margin: 0 0 8px;
+.entry__content {
+  margin: 6px 0 4px;
   font-size: 13px;
   color: var(--color-text);
 }
 
-.journal-item__actions {
+.entry__actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
-.journal-item__actions button {
-  padding: 4px 10px;
-  border: 1px solid var(--border-color-default);
-  border-radius: var(--border-radius-small);
-  background: var(--color-card-background);
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  cursor: pointer;
+@media (max-width: 560px) {
+  .journal-form {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
