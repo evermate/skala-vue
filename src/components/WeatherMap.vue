@@ -335,6 +335,10 @@ watch(
   border: none;
 }
 
+/* 지도 타일(OpenStreetMap)과 Leaflet 팝업 기본 배경은 다크 모드에서도 항상
+   밝게 남아있어서, 그 위에 얹히는 마커/팝업 버튼도 테마 토큰을 따라가지 않고
+   라이트 값으로 고정한다 — 안 그러면 다크 모드에서 어두운 마커가 밝은 지도 위에서
+   붕 뜨거나, 흰 팝업 위 텍스트가 다크용 밝은 회색으로 바뀌어 안 보이게 된다. */
 .weather-mini-marker {
   display: flex;
   flex-direction: column;
@@ -344,8 +348,8 @@ watch(
   width: 34px;
   padding: 2px 1px;
   border-radius: var(--border-radius-small);
-  background: var(--color-card-background);
-  border: 1px solid var(--border-color-default);
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
   box-shadow: var(--shadow-card);
   cursor: pointer;
   line-height: 1.1;
@@ -354,7 +358,7 @@ watch(
 .weather-mini-marker__name {
   font-size: 8px;
   font-weight: 700;
-  color: var(--color-text);
+  color: #333333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -442,7 +446,7 @@ watch(
   border: none;
   border-radius: var(--border-radius-small);
   background: transparent;
-  color: var(--color-text-secondary);
+  color: #666666;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;

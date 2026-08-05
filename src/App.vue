@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
 import UnitToggler from './components/UnitToggler.vue'
+import ThemeToggler from './components/ThemeToggler.vue'
 </script>
 
 <template>
@@ -20,7 +21,10 @@ import UnitToggler from './components/UnitToggler.vue'
           <span class="app-nav__link-text">서비스 소개</span>
         </RouterLink>
       </nav>
-      <UnitToggler />
+      <div class="app-nav__actions">
+        <ThemeToggler />
+        <UnitToggler />
+      </div>
     </div>
   </header>
 
@@ -55,6 +59,13 @@ import UnitToggler from './components/UnitToggler.vue'
 .app-nav__links {
   display: flex;
   gap: 4px;
+}
+
+.app-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .app-nav__link {
