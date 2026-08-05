@@ -31,10 +31,10 @@ function formatForecastDate(dateStr) {
 <template>
   <BaseDashboardCard icon="fa-solid fa-calendar-days" title="5일 예보">
     <template v-if="mocked" #title-badge>
-      <span class="weather-detail__demo-badge" :title="mockReason">데모</span>
+      <el-tag type="warning" size="small" :title="mockReason">데모</el-tag>
     </template>
 
-    <p v-if="isLoading" class="weather-detail__section-empty">불러오는 중...</p>
+    <el-skeleton v-if="isLoading" :rows="2" animated />
     <ul v-else-if="forecast.length > 0" class="weather-detail__forecast">
       <li v-for="day in forecast" :key="day.date" class="weather-detail__forecast-day">
         <span class="weather-detail__forecast-date">{{ formatForecastDate(day.date) }}</span>
@@ -49,15 +49,6 @@ function formatForecastDate(dateStr) {
 </template>
 
 <style scoped>
-.weather-detail__demo-badge {
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--color-warning);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-}
-
 .weather-detail__section-empty {
   margin: 0;
   font-size: 13px;

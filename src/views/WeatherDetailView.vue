@@ -172,9 +172,7 @@ onMounted(loadCityWeather)
       </div>
     </div>
 
-    <p v-if="isLoading" class="weather-detail__empty">
-      <i class="fa-solid fa-spinner fa-spin"></i> 날씨 정보를 불러오는 중입니다...
-    </p>
+    <el-skeleton v-if="isLoading" :rows="6" animated />
     <p v-else-if="errorMessage" class="weather-detail__error">
       <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage }}
     </p>
@@ -284,22 +282,14 @@ onMounted(loadCityWeather)
   background: var(--color-warning);
 }
 
-.weather-detail__empty,
 .weather-detail__error {
   margin: 4px 0 18px;
   padding: 10px 16px;
   border-radius: var(--border-radius-medium);
-  font-size: 14px;
-  text-align: center;
-}
-
-.weather-detail__empty {
-  color: var(--color-text-light);
-}
-
-.weather-detail__error {
   background: var(--color-error-bg);
   color: var(--color-error);
+  font-size: 14px;
+  text-align: center;
 }
 
 .weather-detail__back-btn {

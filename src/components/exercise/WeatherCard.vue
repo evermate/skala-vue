@@ -44,7 +44,7 @@ const isTripleChar = computed(() => props.city.name.length === 3)
         <p class="weather-card__name" :class="{ 'is-triple': isTripleChar }">{{ city.name }}</p>
         <p class="weather-card__status">
           {{ city.status }}
-          <span v-if="city.mocked" class="weather-card__mocked-badge" title="데모 데이터">데모</span>
+          <el-tag v-if="city.mocked" type="warning" size="small" title="데모 데이터">데모</el-tag>
         </p>
       </div>
 
@@ -235,15 +235,6 @@ const isTripleChar = computed(() => props.city.name.length === 3)
   font-weight: 700;
   color: var(--color-text-secondary);
   white-space: nowrap;
-}
-
-.weather-card__mocked-badge {
-  padding: 1px 5px;
-  border-radius: 999px;
-  background: var(--color-warning, #ff9800);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 800;
 }
 
 .weather-card__temp-block {

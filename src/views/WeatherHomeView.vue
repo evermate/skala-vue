@@ -2,7 +2,7 @@
 import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useCustomCityStore } from '@/stores/customCityStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
@@ -200,12 +200,26 @@ function onCityAdded(city) {
   }
 }
 
-function editCityMemo(cityId) {
+async function editCityMemo(cityId) {
   const city = customCityStore.findById(cityId)
   if (!city) return
-  const memo = window.prompt('메모', city.memo ?? '')
-  if (memo === null) return
-  customCityStore.updateMemo(cityId, memo)
+
+  let memo
+  try {
+    ;({ value: memo } = await ElMessageBox.prompt('메모', '메모 수정', {
+      confirmButtonText: '저장',
+      cancelButtonText: '취소',
+      inputValue: city.memo ?? '',
+    }))
+  } catch {
+    return
+  }
+
+  try {
+    await customCityStore.updateMemo(cityId, memo)
+  } catch (error) {
+    ElMessage.error(error.message)
+  }
 }
 
 function goToDetail(cityId) {
@@ -326,9 +340,7 @@ onBeforeUnmount(() => {
             </span>
           </template>
 
-          <p v-if="isLoading" class="weather-dashboard__empty">
-            <i class="fa-solid fa-spinner fa-spin"></i> 날씨 정보를 불러오는 중입니다...
-          </p>
+          <el-skeleton v-if="isLoading" :rows="5" animated />
           <p v-else-if="errorMessage" class="weather-dashboard__error">
             <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage }}
           </p>
@@ -385,9 +397,7 @@ onBeforeUnmount(() => {
             </button>
           </template>
 
-          <p v-if="currentLocationLoading" class="weather-dashboard__empty">
-            <i class="fa-solid fa-spinner fa-spin"></i> 현재 위치 날씨를 불러오는 중입니다...
-          </p>
+          <el-skeleton v-if="currentLocationLoading" :rows="3" animated />
           <p v-else-if="currentLocationError" class="weather-dashboard__error">
             <i class="fa-solid fa-triangle-exclamation"></i> {{ currentLocationError }}
           </p>
@@ -411,9 +421,7 @@ onBeforeUnmount(() => {
               {{ currentLocationDisplayTemp }}{{ currentLocationUnitSymbol }}
             </p>
           </div>
-          <p v-else class="weather-dashboard__empty">
-            <i class="fa-solid fa-spinner fa-spin"></i> 위치 정보를 확인하는 중입니다...
-          </p>
+          <el-skeleton v-else :rows="3" animated />
         </BaseDashboardCard>
       </div>
     </div>

@@ -26,10 +26,10 @@ const levelClass = computed(() => LEVEL_CLASS[props.airQuality?.level] ?? '')
 <template>
   <BaseDashboardCard icon="fa-solid fa-smog" title="미세먼지">
     <template v-if="airQuality?.mocked" #title-badge>
-      <span class="weather-detail__demo-badge" :title="airQuality.mockReason">데모</span>
+      <el-tag type="warning" size="small" :title="airQuality.mockReason">데모</el-tag>
     </template>
 
-    <p v-if="isLoading" class="weather-detail__section-empty">불러오는 중...</p>
+    <el-skeleton v-if="isLoading" :rows="3" animated />
     <dl v-else-if="airQuality" class="weather-detail__list">
       <div class="weather-detail__row">
         <dt>등급</dt>
@@ -49,15 +49,6 @@ const levelClass = computed(() => LEVEL_CLASS[props.airQuality?.level] ?? '')
 </template>
 
 <style scoped>
-.weather-detail__demo-badge {
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--color-warning);
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 800;
-}
-
 .weather-detail__section-empty {
   margin: 0;
   font-size: 13px;

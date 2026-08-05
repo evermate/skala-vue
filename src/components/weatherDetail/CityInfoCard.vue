@@ -38,7 +38,7 @@ const localTimeLabel = computed(() => {
       <span class="city-info__local-time"><i class="fa-solid fa-clock"></i> {{ localTimeLabel }}</span>
     </template>
 
-    <p v-if="isLoading" class="weather-detail__section-empty">불러오는 중...</p>
+    <el-skeleton v-if="isLoading" :rows="4" animated />
     <div v-else-if="info" class="city-info">
       <img
         v-if="info.thumbnailUrl"
