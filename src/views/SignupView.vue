@@ -49,6 +49,36 @@ const rules = {
   agree: [{ validator: validateAgree, trigger: 'change' }],
 }
 
+const isFilling = ref(false)
+
+// 테스트 편의용. 공통 틱 하나로 모든 필드 동시에 한 글자씩 채움, 짧은 필드는 먼저 멈춤.
+async function fillTestValues() {
+  if (isFilling.value) return
+  isFilling.value = true
+
+  const suffix = Date.now().toString(36).slice(-4)
+  const targets = {
+    email: `qa${suffix}@test.com`,
+    name: '테스트',
+    password: 'test1',
+    passwordConfirm: 'test1',
+  }
+
+  for (const key of Object.keys(targets)) form[key] = ''
+  form.agree = true
+
+  const maxLength = Math.max(...Object.values(targets).map((value) => value.length))
+
+  for (let length = 1; length <= maxLength; length += 1) {
+    for (const [key, value] of Object.entries(targets)) {
+      form[key] = value.slice(0, length)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 40))
+  }
+
+  isFilling.value = false
+}
+
 async function submit() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
@@ -112,6 +142,14 @@ async function submit() {
           </div>
         </el-form-item>
 
+        <el-button
+          class="auth-card__fill-btn"
+          :loading="isFilling"
+          :disabled="isFilling"
+          @click="fillTestValues"
+        >
+          <i class="fa-solid fa-wand-magic-sparkles"></i> 양식 채우기
+        </el-button>
         <el-button
           type="primary"
           class="auth-card__submit"
@@ -177,9 +215,14 @@ async function submit() {
   color: var(--color-text-secondary);
 }
 
-.auth-card__submit {
+.auth-card__fill-btn {
   width: 100%;
   margin: 4px 0 0;
+}
+
+.auth-card__submit {
+  width: 100%;
+  margin: 10px 0 0;
 }
 
 .auth-card__switch {
