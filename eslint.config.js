@@ -21,6 +21,15 @@ export default defineConfig([
     },
   },
 
+  {
+    files: ['server.js', 'mock-api/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
 

@@ -11,6 +11,10 @@ import UnitToggler from './components/UnitToggler.vue'
           <i class="fa-solid fa-cloud-sun-rain"></i>
           <span class="app-nav__link-text">날씨 대시보드</span>
         </RouterLink>
+        <RouterLink to="/journal" class="app-nav__link">
+          <i class="fa-solid fa-book"></i>
+          <span class="app-nav__link-text">날씨 일지</span>
+        </RouterLink>
         <RouterLink to="/about" class="app-nav__link">
           <i class="fa-solid fa-circle-info"></i>
           <span class="app-nav__link-text">서비스 소개</span>

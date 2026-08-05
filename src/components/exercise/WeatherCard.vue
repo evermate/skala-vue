@@ -14,7 +14,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select-card', 'click-detail', 'delete-city'])
+const emit = defineEmits(['select-card', 'click-detail', 'delete-city', 'edit-memo'])
 
 // "더움/선선함" 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
 const isWarm = computed(() => props.city.temp >= 25)
@@ -42,7 +42,10 @@ const isTripleChar = computed(() => props.city.name.length === 3)
       <i class="weather-card__icon" :class="city.icon"></i>
       <div class="weather-card__name-block">
         <p class="weather-card__name" :class="{ 'is-triple': isTripleChar }">{{ city.name }}</p>
-        <p class="weather-card__status">{{ city.status }}</p>
+        <p class="weather-card__status">
+          {{ city.status }}
+          <span v-if="city.mocked" class="weather-card__mocked-badge" title="데모 데이터">데모</span>
+        </p>
       </div>
 
       <div class="weather-card__temp-block" :class="isWarm ? 'is-warm' : 'is-cool'">
@@ -68,6 +71,16 @@ const isTripleChar = computed(() => props.city.name.length === 3)
       @click.stop="emit('delete-city', city.id)"
     >
       <i class="fa-solid fa-trash"></i>
+    </button>
+
+    <button
+      v-if="isCustom"
+      class="weather-card__memo-btn"
+      title="메모 수정"
+      aria-label="메모 수정"
+      @click.stop="emit('edit-memo', city.id)"
+    >
+      <i class="fa-solid fa-pen"></i>
     </button>
   </li>
 </template>
@@ -224,6 +237,15 @@ const isTripleChar = computed(() => props.city.name.length === 3)
   white-space: nowrap;
 }
 
+.weather-card__mocked-badge {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--color-warning, #ff9800);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+}
+
 .weather-card__temp-block {
   display: flex;
   flex-direction: column;
@@ -310,6 +332,34 @@ const isTripleChar = computed(() => props.city.name.length === 3)
 .weather-card__delete-btn:hover {
   background: var(--color-error);
   border-color: var(--color-error);
+  color: #ffffff;
+}
+
+.weather-card__memo-btn {
+  position: absolute;
+  bottom: -8px;
+  left: -8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-color-default);
+  border-radius: 50%;
+  background: var(--color-card-background);
+  color: var(--color-text-light);
+  font-size: 10px;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.weather-card__memo-btn:hover {
+  background: var(--color-primary-darker);
+  border-color: var(--color-primary-darker);
   color: #ffffff;
 }
 </style>

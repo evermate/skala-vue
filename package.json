@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "api": "node server.js",
+    "dev:all": "concurrently --kill-others-on-fail --names VUE,API --prefix-colors cyan,magenta \"npm run dev\" \"npm run api\"",
     "build": "vite build",
+    "build:pages": "vite build --mode pages",
     "preview": "vite preview",
     "lint": "run-s \"lint:*\"",
     "lint:oxlint": "oxlint . --fix",
@@ -23,6 +26,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.8",
+    "concurrently": "^10.0.4",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-oxlint": "~1.76.0",

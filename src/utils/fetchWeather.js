@@ -70,9 +70,26 @@ async function fetchFromOpenMeteo(cities) {
   })
 }
 
+// 두 공급자 다 실패해도(네트워크 차단 등) 시연이 끊기지 않게 쓰는 고정 데모 데이터.
+function createFallbackWeather(city) {
+  return {
+    id: city.id,
+    name: city.name,
+    lat: city.lat,
+    lon: city.lon,
+    temp: 20,
+    feelsLike: 19,
+    humidity: 55,
+    windSpeed: 2.1,
+    status: '맑음',
+    icon: 'fa-solid fa-sun',
+    mocked: true,
+  }
+}
+
 // cities: [{ id, name, lat, lon }] -> 현재 날씨를 도시별로 조회해 매핑.
 // OpenWeatherMap API 키가 있으면 우선 사용하고, 키가 없거나 호출이 실패하면
-// 키가 필요 없는 Open-Meteo로 자동 폴백한다.
+// 키가 필요 없는 Open-Meteo로 자동 폴백하고, 그마저 실패하면 데모 데이터로 폴백한다.
 export async function fetchWeatherForCities(cities) {
   const hasApiKey = Boolean(import.meta.env.VITE_OPENWEATHER_API_KEY)
 
@@ -84,7 +101,11 @@ export async function fetchWeatherForCities(cities) {
     }
   }
 
-  return fetchFromOpenMeteo(cities)
+  try {
+    return await fetchFromOpenMeteo(cities)
+  } catch {
+    return cities.map(createFallbackWeather)
+  }
 }
 
 // fetchWeatherForCities가 던진 에러를 화면에 보여줄 문구로 변환한다.

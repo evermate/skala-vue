@@ -18,6 +18,7 @@ const city = ref(null)
 const isDomestic = ref(true)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const customMemo = ref('')
 
 const airQuality = ref(null)
 const airQualityLoading = ref(false)
@@ -80,7 +81,7 @@ function loadWeatherFor(target) {
   loadForecast(target)
 }
 
-function loadCityWeather() {
+async function loadCityWeather() {
   const cityId = route.params.cityId
 
   // "현위치" 버튼처럼 목록에 없는 임의 좌표는 쿼리스트링(lat/lon/name)으로 받는다.
@@ -101,6 +102,10 @@ function loadCityWeather() {
     return
   }
 
+  // 커스텀 도시는 mock API에서 비동기로 로드되므로, /weather/custom_XX로 바로
+  // 들어온 경우를 위해 조회 전에 로드가 끝날 때까지 기다린다.
+  await customCityStore.ensureHydrated()
+
   const foundInKorea = KOREA_CITIES.find((item) => item.id === cityId)
   const foundInWorld = WORLD_CITIES.find((item) => item.id === cityId)
   const foundCustom = customCityStore.findById(cityId)
@@ -112,6 +117,7 @@ function loadCityWeather() {
   }
 
   isDomestic.value = foundCustom ? foundCustom.region === 'domestic' : Boolean(foundInKorea)
+  customMemo.value = foundCustom?.memo ?? ''
   loadWeatherFor(found)
 }
 
@@ -144,6 +150,9 @@ onMounted(loadCityWeather)
       <div class="weather-detail__card">
         <p class="weather-detail__place">
           <i class="fa-solid fa-location-dot"></i> 지정 지역: {{ regionLabel }}{{ city.name }}
+        </p>
+        <p v-if="customMemo" class="weather-detail__memo">
+          <i class="fa-solid fa-note-sticky"></i> {{ customMemo }}
         </p>
         <dl class="weather-detail__list">
           <div class="weather-detail__row">
@@ -253,6 +262,15 @@ onMounted(loadCityWeather)
 
 .weather-detail__place i {
   color: var(--color-primary-darker);
+}
+
+.weather-detail__memo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -8px 0 16px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 .weather-detail__section-title {

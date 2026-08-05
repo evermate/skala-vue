@@ -195,6 +195,14 @@ function onCityAdded(city) {
   }
 }
 
+function editCityMemo(cityId) {
+  const city = customCityStore.findById(cityId)
+  if (!city) return
+  const memo = window.prompt('메모', city.memo ?? '')
+  if (memo === null) return
+  customCityStore.updateMemo(cityId, memo)
+}
+
 function goToDetail(cityId) {
   router.push('/weather/' + cityId)
 }
@@ -250,7 +258,10 @@ watchEffect(() => {
   console.log('[watchEffect 자동 호출] 현재 검색어:', searchQuery.value)
 })
 
-onMounted(fetchWeatherList)
+onMounted(() => {
+  customCityStore.ensureHydrated()
+  fetchWeatherList()
+})
 </script>
 
 <template>
@@ -292,6 +303,7 @@ onMounted(fetchWeatherList)
               @select-card="selectCity"
               @click-detail="goToDetail"
               @delete-city="deleteCustomCity"
+              @edit-memo="editCityMemo"
             />
           </ul>
           <p v-else class="weather-dashboard__empty">검색 결과가 일치하는 도시가 없습니다.</p>
