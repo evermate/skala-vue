@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
+import { convertTemp } from '@/utils/temperature'
 
 const props = defineProps({
   city: {
@@ -17,9 +18,18 @@ const emit = defineEmits(['select-card', 'click-detail', 'delete-city'])
 
 // "더움/선선함" 판정은 표시 단위와 무관하게 원본(섭씨) 값 기준으로 유지한다.
 const isWarm = computed(() => props.city.temp >= 25)
-const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
+const { unit, unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
+// 판정 자체는 섭씨 25도 기준이지만, 라벨에 보여주는 숫자는 화씨로 바꿔 봐도 옆의
+// displayTemp(화씨)랑 단위가 안 맞아 보이지 않도록 같은 단위로 변환해서 보여준다.
+const tempThresholdLabel = computed(() => {
+  const threshold = convertTemp(25, unit.value)
+  return isWarm.value ? `더움 (${threshold}↑)` : `선선함 (${threshold}↓)`
+})
 // 검색으로 추가한 도시만 삭제 가능 — id 생성 규칙(customCityStore.js)이 custom_ 접두어로 고정돼 있음.
 const isCustom = computed(() => props.city.id.startsWith('custom_'))
+// 3글자 이름(백령도/베이징 등)은 좁은 카드에서 2줄로 감기기 딱 직전인 경우가 많아서,
+// 폰트를 살짝 줄여 한 줄에 들어갈 확률을 높인다.
+const isTripleChar = computed(() => props.city.name.length === 3)
 </script>
 
 <template>
@@ -31,15 +41,13 @@ const isCustom = computed(() => props.city.id.startsWith('custom_'))
     <div class="weather-card__header">
       <i class="weather-card__icon" :class="city.icon"></i>
       <div class="weather-card__name-block">
-        <p class="weather-card__name">{{ city.name }}</p>
+        <p class="weather-card__name" :class="{ 'is-triple': isTripleChar }">{{ city.name }}</p>
         <p class="weather-card__status">{{ city.status }}</p>
       </div>
 
       <div class="weather-card__temp-block" :class="isWarm ? 'is-warm' : 'is-cool'">
         <span class="weather-card__temp-value">{{ displayTemp }}{{ unitSymbol }}</span>
-        <span class="weather-card__temp-label">{{
-          isWarm ? '더움 (25도 이상)' : '선선함 (25도 미만)'
-        }}</span>
+        <span class="weather-card__temp-label">{{ tempThresholdLabel }}</span>
       </div>
     </div>
 
@@ -195,10 +203,17 @@ const isCustom = computed(() => props.city.id.startsWith('custom_'))
   margin: 0;
   font-size: 20px;
   font-weight: 800;
+  line-height: 1.15;
   color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.weather-card__name.is-triple {
+  font-size: 17px;
 }
 
 .weather-card__status {
@@ -249,7 +264,7 @@ const isCustom = computed(() => props.city.id.startsWith('custom_'))
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
+  width: 51px;
   border: 1px solid var(--border-color-default);
   border-left-style: dashed;
   border-top-right-radius: var(--border-radius-large);

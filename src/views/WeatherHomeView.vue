@@ -398,14 +398,25 @@ onMounted(fetchWeatherList)
 }
 
 /* 카드 5줄(2열이라 카드 10장) 높이만큼만 보이고 그 아래는 스크롤.
-   카드 한 장 높이(padding 16*2 + header 37) 69px * 5줄 + 줄 사이 gap 12px * 4 = 393px. */
+   카드 한 장 높이(padding 16*2 + header 37) 69px * 5줄 + 줄 사이 gap 12px * 4 = 393px.
+   맨 윗줄 카드가 hover로 살짝 떠오르면서(translateY) 생기는 그림자/테두리 강조가
+   스크롤 컨테이너 위 경계에 그대로 잘려서(overflow-y clip) 위 카드 영역에 씹혀 보이는 걸
+   막기 위해 상단 패딩을 8px 주고, 5줄이 그대로 다 보이도록 그만큼 max-height도 늘린다.
+
+   최소 컬럼폭 270px: 카드 안 고정폭 요소(상세보기 탭 padding-right 78px + 아이콘 24px +
+   온도 라벨 블록 ~77px + gap들)만으로 이미 ~220px를 차지해서, 220px를 최소값으로 두면
+   2열이 겨우 들어가는 컨테이너 폭에서 카드가 과하게 눌려 도시 이름이 "서울" 같은
+   2글자조차 바로 잘리는 구간이 생겼다(WeatherCard.vue의 이름을 2줄 clamp로 바꿨어도
+   폭이 이 정도로 좁으면 "서"/"울"처럼 한 글자씩 쪼개져서 더 안 좋음). 270px면 2열일 때
+   짧은 이름은 한 줄에 넉넉히 들어가고, 4~7글자 정도의 긴 이름만 "싱가포/르"처럼
+   그나마 읽을 만하게 두 줄로 감기며, 그마저 부족하면 1열로 자연스럽게 떨어진다. */
 .weather-dashboard__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
   gap: 12px;
-  max-height: 393px;
+  max-height: 401px;
   margin: 0;
-  padding: 0 10px 0 0;
+  padding: 8px 10px 0 0;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border-color-default) transparent;
