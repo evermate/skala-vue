@@ -1,7 +1,8 @@
 <script setup>
-import { ref, computed, watch, watchEffect, onMounted } from 'vue'
+import { ref, computed, watch, watchEffect, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
+import { ElMessage } from 'element-plus'
 import { useDashboardStore } from '@/stores/dashboardStore'
 import { useCustomCityStore } from '@/stores/customCityStore'
 import BaseDashboardCard from '@/components/exercise/BaseDashboardCard.vue'
@@ -255,17 +256,33 @@ function goToCurrentLocationDetail() {
   })
 }
 
+const DEFAULT_TITLE = '날씨 대시보드'
+
+// 도시가 선택될 때(지도/카드 클릭)마다 토스트로 한 번 더 알려준다. 지도 위
+// 상태 문구(selectedCityInfo)는 템플릿 바인딩만으로 이미 뜨지만, 그건 값이
+// 바뀔 때 화면을 다시 그리는 반응성 동작이지 부수효과가 아니다. 토스트처럼
+// "값이 바뀌면 실행할 동작"이 필요한 경우가 watch를 computed 대신 쓰는 이유다.
 watch(selectedCityInfo, (newValue) => {
-  console.log('[watch 감지] 상태바 문구가 업데이트되었습니다 ->', newValue)
+  if (newValue) ElMessage.info(newValue)
 })
 
+// 검색어를 브라우저 탭 제목에 반영한다. 탭 제목은 Vue 템플릿 바깥(document)
+// 상태라 computed로는 표현할 수 없고, watchEffect처럼 반응형 값을 읽으면서
+// DOM 밖에 부수효과를 내는 API가 필요하다.
 watchEffect(() => {
-  console.log('[watchEffect 자동 호출] 현재 검색어:', searchQuery.value)
+  const query = searchQuery.value.trim()
+  document.title = query ? `날씨 - ${query}` : DEFAULT_TITLE
 })
 
 onMounted(() => {
   customCityStore.ensureHydrated()
   fetchWeatherList()
+})
+
+// 검색어에 맞춰 바뀐 탭 제목이 다른 화면(일지/소개)까지 그대로 묻어가지 않도록
+// 이 화면을 벗어날 때 기본값으로 되돌린다.
+onBeforeUnmount(() => {
+  document.title = DEFAULT_TITLE
 })
 </script>
 
