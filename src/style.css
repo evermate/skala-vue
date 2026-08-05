@@ -48,6 +48,18 @@
 
   /* type */
   --font-sans: 'PretendardVariable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Element Plus 테마 오버라이드. 자체 색 토큰(--color-primary-darker)을
+     Element Plus 컴포넌트 변수명으로 매핑해서 기본 파란색 대신 사이트 골드
+     컬러를 쓰게 한다. light-3/dark-2 등은 Element Plus가 버튼 hover/active에
+     내부적으로 쓰는 파생색이라, 이것도 같이 안 맞추면 hover만 파랗게 남는다. */
+  --el-color-primary: var(--color-primary-darker);
+  --el-color-primary-light-3: color-mix(in srgb, white 30%, var(--color-primary-darker) 70%);
+  --el-color-primary-light-5: color-mix(in srgb, white 50%, var(--color-primary-darker) 50%);
+  --el-color-primary-light-7: color-mix(in srgb, white 70%, var(--color-primary-darker) 30%);
+  --el-color-primary-light-8: color-mix(in srgb, white 80%, var(--color-primary-darker) 20%);
+  --el-color-primary-light-9: color-mix(in srgb, white 90%, var(--color-primary-darker) 10%);
+  --el-color-primary-dark-2: color-mix(in srgb, black 20%, var(--color-primary-darker) 80%);
 }
 
 html {
