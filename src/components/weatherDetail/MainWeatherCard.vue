@@ -1,15 +1,10 @@
 <script setup>
-import { computed } from 'vue'
 import { useDisplayTemp } from '@/composables/useDisplayTemp'
 
 const props = defineProps({
   city: {
     type: Object,
     required: true,
-  },
-  isDomestic: {
-    type: Boolean,
-    default: false,
   },
   customMemo: {
     type: String,
@@ -19,15 +14,10 @@ const props = defineProps({
 
 const { unitSymbol, displayTemp } = useDisplayTemp(() => props.city.temp)
 const { displayTemp: displayFeelsLike } = useDisplayTemp(() => props.city.feelsLike)
-
-const regionLabel = computed(() => (props.isDomestic ? '대한민국 ' : ''))
 </script>
 
 <template>
   <div class="weather-detail__card">
-    <p class="weather-detail__place">
-      <i class="fa-solid fa-location-dot"></i> {{ regionLabel }}{{ city.name }}
-    </p>
     <p v-if="customMemo" class="weather-detail__memo">
       <i class="fa-solid fa-note-sticky"></i> {{ customMemo }}
     </p>
@@ -66,25 +56,11 @@ const regionLabel = computed(() => (props.isDomestic ? '대한민국 ' : ''))
   box-shadow: var(--shadow-card);
 }
 
-.weather-detail__place {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-.weather-detail__place i {
-  color: var(--color-primary-darker);
-}
-
 .weather-detail__memo {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: -8px 0 16px;
+  margin: 0 0 16px;
   font-size: 13px;
   color: var(--color-text-secondary);
 }

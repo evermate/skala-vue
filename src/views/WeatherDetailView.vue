@@ -5,18 +5,20 @@ import { KOREA_CITIES } from '@/utils/koreaCities'
 import { WORLD_CITIES } from '@/utils/worldCities'
 import { fetchWeatherForCities, getWeatherErrorMessage } from '@/utils/fetchWeather'
 import { fetchAirQuality, fetchForecast } from '@/utils/fetchWeatherExtras'
+import { fetchCityInfo } from '@/utils/fetchCityInfo'
+import { fetchTimezone } from '@/utils/fetchTimezone'
 import { useCustomCityStore } from '@/stores/customCityStore'
 import WeatherEffect from '@/components/WeatherEffect.vue'
 import MainWeatherCard from '@/components/weatherDetail/MainWeatherCard.vue'
 import AirQualityCard from '@/components/weatherDetail/AirQualityCard.vue'
 import ForecastCard from '@/components/weatherDetail/ForecastCard.vue'
+import CityInfoCard from '@/components/weatherDetail/CityInfoCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const customCityStore = useCustomCityStore()
 
 const city = ref(null)
-const isDomestic = ref(true)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const customMemo = ref('')
@@ -28,6 +30,10 @@ const forecast = ref([])
 const forecastLoading = ref(false)
 const forecastMocked = ref(false)
 const forecastMockReason = ref('')
+
+const cityInfo = ref(null)
+const cityInfoLoading = ref(false)
+const cityTimezone = ref(null)
 
 async function loadMainWeather(target) {
   isLoading.value = true
@@ -71,12 +77,31 @@ async function loadForecast(target) {
   }
 }
 
+// 위키백과 요약과 현지 타임존도 독립적인 부가 정보라 같은 방식으로 처리한다. 동음이의어
+// 문서에 걸리거나(예: '파리') 위키 표제어와 안 맞는 도시명이면 fetchCityInfo가, 좌표
+// 조회가 실패하면 fetchTimezone이 각각 null을 돌려주므로 그 결과를 그대로 반영만 하고
+// 실패를 별도로 취급하지 않는다 — 하나가 실패해도 다른 하나는 그대로 보여준다.
+async function loadCityInfo(target) {
+  cityInfoLoading.value = true
+  try {
+    const [info, timezone] = await Promise.all([
+      fetchCityInfo(target.name),
+      fetchTimezone({ lat: target.lat, lon: target.lon }),
+    ])
+    cityInfo.value = info
+    cityTimezone.value = timezone
+  } finally {
+    cityInfoLoading.value = false
+  }
+}
+
 function loadWeatherFor(target) {
-  // 셋 다 위경도만 있으면 되고 서로 의존관계가 없어서, 하나가 끝나야 다음이
+  // 넷 다 위경도(또는 이름)만 있으면 되고 서로 의존관계가 없어서, 하나가 끝나야 다음이
   // 시작하는 게 아니라 처음부터 동시에 쏜다.
   loadMainWeather(target)
   loadAirQuality(target)
   loadForecast(target)
+  loadCityInfo(target)
 }
 
 async function loadCityWeather() {
@@ -90,7 +115,6 @@ async function loadCityWeather() {
       errorMessage.value = '위치 정보가 없습니다.'
       return
     }
-    isDomestic.value = false
     loadWeatherFor({
       id: 'current-location',
       name: route.query.name || '현재 위치',
@@ -114,7 +138,6 @@ async function loadCityWeather() {
     return
   }
 
-  isDomestic.value = foundCustom ? foundCustom.region === 'domestic' : Boolean(foundInKorea)
   customMemo.value = foundCustom?.memo ?? ''
   loadWeatherFor(found)
 }
@@ -134,15 +157,19 @@ onMounted(loadCityWeather)
       <button class="weather-detail__back-btn" @click="goHome">
         <i class="fa-solid fa-arrow-left"></i> 뒤로가기
       </button>
-      <h2 class="weather-detail__title"><i class="fa-solid fa-location-dot"></i> 상세정보</h2>
-      <span
-        v-if="city"
-        class="weather-detail__api-status"
-        :class="city.mocked ? 'is-demo' : 'is-live'"
-        :title="city.mocked ? `데모 데이터 (${city.mockReason})` : '실시간 API 연동 중'"
-      >
-        <span class="dot"></span>
-      </span>
+      <div class="weather-detail__title-group">
+        <h2 class="weather-detail__title">
+          <i class="fa-solid fa-location-dot"></i> {{ city?.name ?? '상세정보' }}
+        </h2>
+        <span
+          v-if="city"
+          class="weather-detail__api-status"
+          :class="city.mocked ? 'is-demo' : 'is-live'"
+          :title="city.mocked ? `데모 데이터 (${city.mockReason})` : '실시간 API 연동 중'"
+        >
+          <span class="dot"></span>
+        </span>
+      </div>
     </div>
 
     <p v-if="isLoading" class="weather-detail__empty">
@@ -152,33 +179,64 @@ onMounted(loadCityWeather)
       <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage }}
     </p>
 
-    <template v-else-if="city">
-      <MainWeatherCard :city="city" :is-domestic="isDomestic" :custom-memo="customMemo" />
+    <div v-else-if="city" class="weather-detail__layout">
+      <div class="weather-detail__main">
+        <MainWeatherCard :city="city" :custom-memo="customMemo" />
 
-      <AirQualityCard :air-quality="airQuality" :is-loading="airQualityLoading" />
+        <AirQualityCard :air-quality="airQuality" :is-loading="airQualityLoading" />
 
-      <ForecastCard
-        :forecast="forecast"
-        :is-loading="forecastLoading"
-        :mocked="forecastMocked"
-        :mock-reason="forecastMockReason"
-      />
-    </template>
+        <ForecastCard
+          :forecast="forecast"
+          :is-loading="forecastLoading"
+          :mocked="forecastMocked"
+          :mock-reason="forecastMockReason"
+        />
+      </div>
+
+      <div class="weather-detail__side">
+        <CityInfoCard :info="cityInfo" :timezone="cityTimezone" :is-loading="cityInfoLoading" />
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .weather-detail {
-  max-width: 480px;
+  max-width: 960px;
   margin: 32px auto;
   padding: 0 16px;
 }
 
+.weather-detail__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 860px) {
+  .weather-detail__layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+  }
+
+  .weather-detail__side {
+    position: sticky;
+    top: calc(var(--nav-height) + 24px);
+  }
+}
+
 .weather-detail__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin: 0 0 20px;
+}
+
+.weather-detail__title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 0 0 20px;
+  gap: 10px;
+  justify-self: center;
 }
 
 .weather-detail__title {
@@ -186,7 +244,8 @@ onMounted(loadCityWeather)
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 20px;
+  font-size: 26px;
+  font-weight: 800;
   color: var(--color-text);
 }
 
@@ -247,6 +306,7 @@ onMounted(loadCityWeather)
   display: flex;
   align-items: center;
   justify-content: center;
+  justify-self: start;
   gap: 6px;
   flex-shrink: 0;
   padding: 8px 12px;
