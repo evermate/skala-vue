@@ -28,6 +28,7 @@
   /* 상태 배경 틴트 */
   --color-success-bg: rgba(76, 175, 80, 0.12);
   --color-error-bg: rgba(244, 67, 54, 0.12);
+  --color-warning-bg: rgba(255, 152, 0, 0.12);
 
   /* 온도계 · 날씨카드 "더움" 표시 전용 (cheese 팔레트가 아닌 기존 warm-text 색 유지) */
   --color-warm: #c2410c;

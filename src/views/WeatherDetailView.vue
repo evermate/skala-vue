@@ -25,6 +25,8 @@ const airQualityLoading = ref(false)
 
 const forecast = ref([])
 const forecastLoading = ref(false)
+const forecastMocked = ref(false)
+const forecastMockReason = ref('')
 
 const { unitSymbol, displayTemp } = useDisplayTemp(() => city.value?.temp)
 
@@ -50,7 +52,8 @@ async function loadMainWeather(target) {
 }
 
 // 미세먼지·예보는 상세 화면을 보조하는 부가 정보라, 메인 날씨와 서로 기다리지 않고
-// 각자 준비되는 대로 채워진다. 실패해도 그 섹션만 "불러오지 못함"으로 남고 나머지엔 영향 없다.
+// 각자 준비되는 대로 채워진다. 메인 날씨처럼 API가 다 실패해도 데모 데이터로 채워지므로
+// 여기서 catch는 그 데모 생성 로직 자체가 깨지는 경우를 위한 방어용일 뿐이다.
 async function loadAirQuality(target) {
   airQualityLoading.value = true
   try {
@@ -65,7 +68,10 @@ async function loadAirQuality(target) {
 async function loadForecast(target) {
   forecastLoading.value = true
   try {
-    forecast.value = await fetchForecast(target)
+    const result = await fetchForecast(target)
+    forecast.value = result.days
+    forecastMocked.value = result.mocked
+    forecastMockReason.value = result.mockReason ?? ''
   } catch {
     forecast.value = []
   } finally {
@@ -135,8 +141,16 @@ onMounted(loadCityWeather)
         <i class="fa-solid fa-arrow-left"></i> 뒤로가기
       </button>
       <h2 class="weather-detail__title">
-        <i class="fa-solid fa-location-dot"></i> 지역별 상세 기상관측 정보
+        <i class="fa-solid fa-location-dot"></i> 상세정보
       </h2>
+      <span
+        v-if="city"
+        class="weather-detail__api-status"
+        :class="city.mocked ? 'is-demo' : 'is-live'"
+        :title="city.mocked ? `데모 데이터 (${city.mockReason})` : '실시간 API 연동 중'"
+      >
+        <span class="dot"></span>
+      </span>
     </div>
 
     <p v-if="isLoading" class="weather-detail__empty">
@@ -175,7 +189,15 @@ onMounted(loadCityWeather)
       </div>
 
       <div class="weather-detail__card">
-        <p class="weather-detail__section-title"><i class="fa-solid fa-smog"></i> 미세먼지</p>
+        <p class="weather-detail__section-title">
+          <i class="fa-solid fa-smog"></i> 미세먼지
+          <span
+            v-if="airQuality?.mocked"
+            class="weather-detail__demo-badge"
+            :title="airQuality.mockReason"
+            >데모</span
+          >
+        </p>
         <p v-if="airQualityLoading" class="weather-detail__section-empty">불러오는 중...</p>
         <dl v-else-if="airQuality" class="weather-detail__list">
           <div class="weather-detail__row">
@@ -197,6 +219,12 @@ onMounted(loadCityWeather)
       <div class="weather-detail__card">
         <p class="weather-detail__section-title">
           <i class="fa-solid fa-calendar-days"></i> 5일 예보
+          <span
+            v-if="forecastMocked"
+            class="weather-detail__demo-badge"
+            :title="forecastMockReason"
+            >데모</span
+          >
         </p>
         <p v-if="forecastLoading" class="weather-detail__section-empty">불러오는 중...</p>
         <ul v-else-if="forecast.length > 0" class="weather-detail__forecast">
@@ -264,6 +292,37 @@ onMounted(loadCityWeather)
   color: var(--color-primary-darker);
 }
 
+.weather-detail__api-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 6px;
+  border-radius: 50%;
+}
+
+.weather-detail__api-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.weather-detail__api-status.is-live {
+  background: var(--color-success-bg);
+}
+
+.weather-detail__api-status.is-live .dot {
+  background: var(--color-success);
+}
+
+.weather-detail__api-status.is-demo {
+  background: var(--color-warning-bg);
+}
+
+.weather-detail__api-status.is-demo .dot {
+  background: var(--color-warning);
+}
+
 .weather-detail__memo {
   display: flex;
   align-items: center;
@@ -285,6 +344,15 @@ onMounted(loadCityWeather)
 
 .weather-detail__section-title i {
   color: var(--color-primary-darker);
+}
+
+.weather-detail__demo-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-warning);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .weather-detail__section-empty {

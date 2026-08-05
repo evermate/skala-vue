@@ -17,6 +17,7 @@ defineProps({
       <h3 class="dashboard-card__title">
         <i v-if="icon" class="dashboard-card__icon" :class="icon"></i>
         {{ title }}
+        <slot name="title-badge"></slot>
       </h3>
       <div v-if="$slots['title-extra']" class="dashboard-card__title-extra">
         <slot name="title-extra"></slot>

@@ -49,15 +49,15 @@ const activeCities = computed(() => (region.value === 'domestic' ? KOREA_CITIES 
 const isCityModalOpen = ref(false)
 
 // customCityStore는 지역 무관하게 도시를 통째로 들고 있어서, 화면에 쓸 때는 항상 현재
-// region으로 걸러서 씀 — 고정 목록과 똑같은 방식으로 목록/지도에 자연스럽게 편입된다.
+// region으로 걸러서 쓴다. 고정 목록과 똑같은 방식으로 목록/지도에 자연스럽게 편입된다.
 const customCitiesForRegion = computed(() => customCityStore.citiesForRegion(region.value))
 const customWeatherForRegion = computed(() => customCityStore.weatherListForRegion(region.value))
-// 지도 fitToBounds용 — 날씨가 아직 안 온 커스텀 도시도 좌표만 있으면 범위 계산엔 포함.
+// 지도 fitToBounds용. 날씨가 아직 안 온 커스텀 도시도 좌표만 있으면 범위 계산엔 포함한다.
 const combinedAllCities = computed(() => [...weatherList.value, ...customCitiesForRegion.value])
-// 검색/필터/카드 목록용 — 날씨가 도착한 커스텀 도시만 고정 도시와 동일하게 취급.
+// 검색/필터/카드 목록용. 날씨가 도착한 커스텀 도시만 고정 도시와 동일하게 취급한다.
 const combinedWeatherList = computed(() => [...weatherList.value, ...customWeatherForRegion.value])
 
-// 콤마로 여러 도시명을 한 번에 검색할 수 있게 한다 ("서울, 부산" -> 서울 또는 부산 매칭).
+// 콤마로 여러 도시명을 한 번에 검색할 수 있게 한다(예: "서울, 부산" 입력 시 서울 또는 부산 매칭).
 // weatherList 자체가 이미 다 불러와 있는 목록(국내 22개/해외 14개)이라 API 재호출 없이
 // 메모리 안에서 필터만 확장하는 거라 추가 비용은 없다.
 const searchTerms = computed(() =>
@@ -68,7 +68,7 @@ const searchTerms = computed(() =>
 )
 
 // 검색어까지만 반영한 목록. 상태 필터 칩의 선택지를 여기서 뽑아서
-// "지금 검색된 도시들 중에 실제로 존재하는 상태"만 칩으로 보여준다.
+// 지금 검색된 도시들 중에 실제로 존재하는 상태만 칩으로 보여준다.
 const searchedWeatherList = computed(() =>
   combinedWeatherList.value.filter(
     (item) =>
@@ -109,7 +109,7 @@ const cachedCurrentLocation = computed(() =>
 )
 
 // 상세보기를 다녀오는 정도의 재진입에서는 굳이 다시 안 부르고 캐시를 그대로 쓴다.
-// (10분 TTL — dashboardStore 참고. 백그라운드 자동 새로고침은 안 하고, 재진입 시점에만 체크한다.)
+// (10분 TTL. dashboardStore 참고. 백그라운드 자동 새로고침은 안 하고, 재진입 시점에만 체크한다.)
 async function fetchWeatherList({ force = false } = {}) {
   // customCities는 지역별 캐시가 아니라 자체 TTL을 가지므로, 고정 목록 fresh 여부와
   // 무관하게 항상 시도한다(내부적으로 이미 fresh하면 알아서 스킵됨).
@@ -117,15 +117,15 @@ async function fetchWeatherList({ force = false } = {}) {
 
   // 이 요청이 어느 지역을 위한 것인지 시작 시점에 고정해둔다. region.value를 나중에
   // (await 이후) 다시 읽으면, 응답이 오기 전에 사용자가 지역을 또 바꿨을 때 늦게 도착한
-  // 응답이 "그 시점의" region.value 자리에 잘못 저장돼서 국내 목록/지도가 해외 데이터로
+  // 응답이 그 시점의 region.value 자리에 잘못 저장돼서 국내 목록/지도가 해외 데이터로
   // 오염되는(또는 반대) 레이스 컨디션이 생긴다.
   const targetRegion = region.value
   const isStillCurrent = () => region.value === targetRegion
 
   if (!force && dashboardStore.isWeatherListFresh(targetRegion)) {
     // 캐시 히트라 여기서 끝나는데, 직전에 다른(이제는 버려진) 지역 요청이 남겨둔
-    // isLoading=true가 안 지워진 채 남아있을 수 있어(그 요청은 region이 바뀌어서
-    // isStillCurrent()가 false가 되고 자기 finally에서 못 끔) — 여기서 확실히 정리한다.
+    // isLoading=true가 안 지워진 채 남아있을 수 있다(그 요청은 region이 바뀌어서
+    // isStillCurrent()가 false가 되고 자기 finally에서 못 끔). 여기서 확실히 정리한다.
     if (isStillCurrent()) {
       isLoading.value = false
       errorMessage.value = ''
@@ -225,7 +225,7 @@ async function onLocate({ lat, lon }) {
     // 지명은 부가 정보라 실패해도 날씨 표시엔 영향 없이 그냥 city.name("현재 위치")으로 남는다.
     const placeName = placeResult.status === 'fulfilled' ? placeResult.value : ''
     dashboardStore.setCurrentLocation(weatherResult.value[0], placeName)
-    // 현위치 버튼을 누른 건 "내 위치를 보고 싶다"는 명시적 의도라, 이전에 선택돼 있던
+    // 현위치 버튼을 누른 건 내 위치를 보고 싶다는 명시적 의도라, 이전에 선택돼 있던
     // 다른 카드 포커스를 그대로 두지 않고 현재 위치로 선택 상태를 넘긴다.
     selectCurrentLocation()
   } else {
@@ -293,6 +293,15 @@ onMounted(() => {
           icon="fa-solid fa-cloud-sun"
           :title="region === 'domestic' ? '국내 날씨 현황' : '해외 날씨 현황'"
         >
+          <template
+            v-if="!isLoading && !errorMessage && !weatherApiNotice && combinedWeatherList.length > 0"
+            #title-badge
+          >
+            <span class="weather-dashboard__api-live" title="실시간 API 연동 중">
+              <span class="dot"></span>
+            </span>
+          </template>
+
           <template v-if="weatherApiNotice" #title-extra>
             <span class="weather-dashboard__api-notice">
               <i class="fa-solid fa-triangle-exclamation"></i> {{ weatherApiNotice }}
@@ -608,5 +617,21 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.weather-dashboard__api-live {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  background: var(--color-success-bg);
+}
+
+.weather-dashboard__api-live .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
 }
 </style>

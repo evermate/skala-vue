@@ -24,6 +24,7 @@ const results = ref([])
 const isAdding = ref(false)
 const addNotice = ref('')
 const addError = ref('')
+const isAddedWeatherMocked = ref(false)
 
 async function onSearch() {
   if (!query.value.trim() || isSearching.value) return
@@ -32,6 +33,7 @@ async function onSearch() {
   searchError.value = ''
   addNotice.value = ''
   addError.value = ''
+  isAddedWeatherMocked.value = false
   results.value = []
 
   try {
@@ -61,6 +63,7 @@ async function onAdd(result) {
   isAdding.value = true
   addNotice.value = ''
   addError.value = ''
+  isAddedWeatherMocked.value = false
 
   const duplicate = findDuplicateCity(result, customCityStore.cities)
   if (duplicate) {
@@ -83,13 +86,19 @@ async function onAdd(result) {
     })
     emit('added', city)
 
-    // 지금 보고 있는 탭과 같은 지역이면 바로 닫아도 결과가 눈에 보이지만, 다른 지역이면
-    // 모달만 조용히 닫힐 뿐 화면엔 아무 변화가 없어 "추가됐는지 안 됐는지" 알 수 없다.
-    // 그런 경우엔 어디 추가됐는지 안내하고 모달을 열어둔 채로 사용자가 직접 닫게 한다.
-    if (city.region === props.region) {
+    // 지금 보고 있는 탭과 같은 지역이고 날씨도 정상 수신됐으면 바로 닫아도 결과가 눈에
+    // 보이지만, 다른 지역이거나 날씨가 데모로 대체됐으면 모달만 조용히 닫혀서는 사용자가
+    // 그 사실을 알 방법이 없다. 그런 경우엔 안내하고 모달을 열어둔 채로 직접 닫게 한다.
+    if (city.region === props.region && !city.mocked) {
       emit('close')
     } else {
-      addNotice.value = `${withSubjectParticle(city.name)} ${city.region === 'domestic' ? '국내' : '해외'} 목록에 추가되었습니다.`
+      const regionNote =
+        city.region === props.region
+          ? ''
+          : `${city.region === 'domestic' ? '국내' : '해외'} 목록에 `
+      const demoNote = city.mocked ? ` 날씨는 데모 데이터입니다 (${city.mockReason}).` : ''
+      addNotice.value = `${withSubjectParticle(city.name)} ${regionNote}추가되었습니다.${demoNote}`
+      isAddedWeatherMocked.value = city.mocked
       query.value = ''
       results.value = []
     }
@@ -131,7 +140,13 @@ function resultLabel(result) {
       </div>
 
       <p v-if="searchError" class="city-modal__message is-error">{{ searchError }}</p>
-      <p v-if="addNotice" class="city-modal__message is-notice">{{ addNotice }}</p>
+      <p
+        v-if="addNotice"
+        class="city-modal__message"
+        :class="isAddedWeatherMocked ? 'is-warning' : 'is-notice'"
+      >
+        {{ addNotice }}
+      </p>
       <p v-if="addError" class="city-modal__message is-error">{{ addError }}</p>
 
       <ul v-if="results.length > 0" class="city-modal__results">
@@ -277,6 +292,11 @@ function resultLabel(result) {
 .city-modal__message.is-notice {
   background: var(--color-success-bg);
   color: var(--color-success);
+}
+
+.city-modal__message.is-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
 }
 
 .city-modal__results {
